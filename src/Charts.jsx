@@ -36,7 +36,7 @@ function ChartTooltip({ active, payload, label, formatter }) {
   if (!active || !payload?.length) return null;
   return (
     <div className="chart-tooltip">
-      <div className="chart-tooltip-header">{label}</div>
+      {label && label !== '' && <div className="chart-tooltip-header">{label}</div>}
       {payload.map((entry, i) => (
         <div key={i} className="chart-tooltip-row">
           <span className="chart-tooltip-dot" style={{ background: entry.color }} />

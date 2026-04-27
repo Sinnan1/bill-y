@@ -133,6 +133,70 @@ IMPORTANT RULES (ANTI-HALLUCINATION STRICT MODE):
 const CHAT_PROMPT_PREFIX = `You are Bill-y, a Pakistani utility bill expert. The user has uploaded a bill and you analyzed it. Here is the analysis data:\n\n`;
 const CHAT_PROMPT_SUFFIX = `\n\nAnswer the user's question based on this specific bill data. Be conversational, specific with numbers, and helpful. If the question is about something not in the bill, say so honestly. Keep answers concise but thorough. Answer in English.`;
 
+const COMPARE_PROMPT = `You are Bill-y, a Pakistani utility bill expert. You are given TWO utility bill images.
+Image 1 is Bill A (the older or baseline bill).
+Image 2 is Bill B (the newer or comparison bill).
+
+Compare them and return ONLY valid JSON with this exact structure:
+{
+  "billA": {
+    "month": "Month Year",
+    "totalAmount": number,
+    "unitsConsumed": number,
+    "unitLabel": "kWh" | "MMBTU",
+    "dueDate": "DD Mon YYYY" or null,
+    "isPastDue": boolean,
+    "billType": "LESCO Electricity Bill" | "SNGPL Gas Bill" | "WASA Water Bill" | "Unknown",
+    "isNetMetering": boolean,
+    "charges": [{ "name": string, "amount": number, "status": "NORMAL"|"FIXED"|"GOVERNMENT"|"OVERDUE"|"WARNING" }],
+    "netMetering": { "unitsExported": number, "unitsImported": number, "netPosition": number, "creditValue": number, "dgCapacity": number or null, "expMdi": number or null, "isOverExporting": boolean } or null
+  },
+  "billB": {
+    "month": "Month Year",
+    "totalAmount": number,
+    "unitsConsumed": number,
+    "unitLabel": "kWh" | "MMBTU",
+    "dueDate": "DD Mon YYYY" or null,
+    "isPastDue": boolean,
+    "billType": "LESCO Electricity Bill" | "SNGPL Gas Bill" | "WASA Water Bill" | "Unknown",
+    "isNetMetering": boolean,
+    "charges": [{ "name": string, "amount": number, "status": "NORMAL"|"FIXED"|"GOVERNMENT"|"OVERDUE"|"WARNING" }],
+    "netMetering": { "unitsExported": number, "unitsImported": number, "netPosition": number, "creditValue": number, "dgCapacity": number or null, "expMdi": number or null, "isOverExporting": boolean } or null
+  },
+  "majorChanges": [
+    {
+      "chargeName": "Name of charge that changed significantly",
+      "amountA": number,
+      "amountB": number,
+      "diffAmount": number,
+      "explanation": "1 sentence explaining the change."
+    }
+  ],
+  "verdict": "A clear 2-3 sentence summary of exactly why the bill changed and what the user should know.",
+  "solarAnalysis": {
+    "billAHasSolar": boolean,
+    "billBHasSolar": boolean,
+    "mixedSolarSituation": boolean,
+    "nonSolarBill": "A" | "B" | null,
+    "solarRecommendation": {
+      "headline": "Short compelling headline (max 8 words)",
+      "body": "2-3 sentences: explain why solar is right for them based on their actual usage and bill amount. Include estimated system size in kW and estimated monthly savings.",
+      "estimatedSystemKw": number,
+      "estimatedMonthlySavings": "Rs. X,XXX",
+      "paybackYears": number,
+      "topReasons": ["reason1", "reason2", "reason3"]
+    } or null
+  }
+}
+
+IMPORTANT RULES (STRICT MODE):
+- diffAmount should be positive if Bill B > Bill A, and negative if Bill B < Bill A.
+- NEVER hallucinate values. If you can't read a value, return null.
+- majorChanges: only list items with significant difference (> Rs. 100). Maximum 6 major changes.
+- For solarAnalysis: set mixedSolarSituation=true when exactly one of the two bills has net metering / solar. In that case set nonSolarBill to "A" or "B" accordingly.
+- Solar recommendation: base estimatedSystemKw on the non-solar bill's monthly units. Typical Pakistani residential solar: 1 kW generates ~100-120 kWh/month. Calculate accordingly.
+- Do NOT include markdown blocks in your response, just the raw JSON object.`;
+
 function buildDocPrompt(question, context, mode = 'government', chunkCount = 5) {
   const toneGuide = mode === 'government'
     ? `You are Official Docs Expert, a STRICT government document assistant for Pakistani utility consumers.
@@ -306,6 +370,59 @@ app.post('/api/analyze-bill', upload.single('file'), async (req, res) => {
     res.json(addDerivedData(parsed));
   } catch (err) {
     console.error('analyze-bill error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 1.5 Compare Bills
+app.post('/api/compare-bills', upload.array('files', 2), async (req, res) => {
+  try {
+    if (!req.files || req.files.length !== 2) {
+      return res.status(400).json({ error: 'Exactly two files must be uploaded' });
+    }
+
+    const parts = req.files.map(file => ({
+      inlineData: {
+        mimeType: file.mimetype || 'image/jpeg',
+        data: file.buffer.toString('base64')
+      }
+    }));
+    parts.push({ text: COMPARE_PROMPT });
+
+    const config = {
+      model: 'gemini-2.5-flash',
+      contents: [{ role: 'user', parts }],
+      config: { responseMimeType: 'application/json' }
+    };
+
+    const result = await generateWithRetry(config);
+    const text = result.text;
+
+    let cleaned = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    cleaned = cleaned
+      .replace(/,\s*([\]}])/g, '$1')
+      .split('')
+      .filter(c => {
+        const code = c.charCodeAt(0);
+        return code === 0x0A || code === 0x0D || code === 0x09 || code >= 0x20;
+      })
+      .join('');
+
+    let parsed;
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch {
+      const match = cleaned.match(/\{[\s\S]*\}/);
+      if (match) {
+        parsed = JSON.parse(match[0].replace(/,\s*([\]}])/g, '$1'));
+      } else {
+        throw new Error('Failed to parse bill comparison');
+      }
+    }
+
+    res.json(parsed);
+  } catch (err) {
+    console.error('compare-bills error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });

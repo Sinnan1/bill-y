@@ -70,6 +70,27 @@ export async function analyzeBill(file) {
   return res.json();
 }
 
+/* ═══════ Compare 2 Bills ═══════ */
+export async function compareBills(file1, file2) {
+  const processed1 = await compressImage(file1);
+  const processed2 = await compressImage(file2);
+  const formData = new FormData();
+  formData.append('files', processed1); // multer expects array field 'files'
+  formData.append('files', processed2);
+
+  const res = await fetch(`${API_BASE}/api/compare-bills`, {
+    method: 'POST',
+    body: formData
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to compare bills');
+  }
+
+  return res.json();
+}
+
 /* ═══════ Chat Q&A ═══════ */
 export async function askQuestion(question, billData) {
   const res = await fetch(`${API_BASE}/api/chat`, {
