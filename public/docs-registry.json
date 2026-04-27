@@ -1,0 +1,11 @@
+[
+  {
+    "id": "nepra-csm-2025",
+    "name": "NEPRA Consumer Service Manual 2025",
+    "category": "government",
+    "authoritative": true,
+    "icon": "🏛️",
+    "description": "Consumer rights, billing rules, complaint procedures, and disconnection policies for all Pakistani DISCOs.",
+    "embeddingsFile": "/embeddings/nepra-csm-2025.json"
+  }
+]
