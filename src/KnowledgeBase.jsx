@@ -1,17 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { embedText, askWithContextStream } from './gemini';
-
-/* ═══════ Cosine Similarity ═══════ */
-function cosineSimilarity(a, b) {
-  if (!a?.length || !b?.length || a.length !== b.length) return 0;
-  let dot = 0, magA = 0, magB = 0;
-  for (let i = 0; i < a.length; i++) {
-    dot += a[i] * b[i];
-    magA += a[i] * a[i];
-    magB += b[i] * b[i];
-  }
-  return dot / (Math.sqrt(magA) * Math.sqrt(magB));
-}
+import { searchDocs, askWithContextStream } from './gemini';
 
 /* ═══════ SVG Icons ═══════ */
 const SearchIcon = () => (
@@ -44,7 +32,6 @@ const CATEGORY_META = {
 
 /* ═══════ Loading Stage Messages ═══════ */
 const STAGE_MESSAGES = {
-  embedding:  'Understanding your question...',
   searching:  'Scanning pages across documents...',
   generating: 'Reading relevant sections...',
   streaming:  '',
@@ -61,18 +48,16 @@ const SUGGESTED_QUESTIONS = [
 
 export default function KnowledgeBase() {
   const [docs, setDocs] = useState([]);
-  const [allChunks, setAllChunks] = useState([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
-  const [loadProgress, setLoadProgress] = useState({ loaded: 0, total: 0 });
   const [docsError, setDocsError] = useState(null);
   const [question, setQuestion] = useState('');
   const [answer, setAnswer] = useState(null);
   const [sources, setSources] = useState([]);
-  const [stage, setStage] = useState(null); // null | embedding | searching | generating | streaming
+  const [stage, setStage] = useState(null); // null | searching | generating | streaming
   const [error, setError] = useState(null);
   const answerRef = useRef(null);
 
-  // ─── Lazy Loading: Registry first, then embeddings in background ───
+  // ─── Load docs registry ───
   useEffect(() => {
     fetch('/docs-registry.json')
       .then(r => {
@@ -81,18 +66,7 @@ export default function KnowledgeBase() {
       })
       .then(registry => {
         setDocs(registry);
-        setLoadProgress({ loaded: 0, total: registry.length });
-
-        // Load embeddings lazily via requestIdleCallback (or fallback)
-        const loadFn = () => {
-          loadEmbeddingsSequentially(registry);
-        };
-
-        if ('requestIdleCallback' in window) {
-          requestIdleCallback(loadFn);
-        } else {
-          setTimeout(loadFn, 100);
-        }
+        setLoadingDocs(false);
       })
       .catch(err => {
         setDocsError(err.message);
@@ -100,100 +74,34 @@ export default function KnowledgeBase() {
       });
   }, []);
 
-  async function loadEmbeddingsSequentially(registry) {
-    const chunks = [];
-    let loaded = 0;
-
-    for (const doc of registry) {
-      try {
-        const res = await fetch(doc.embeddingsFile);
-        if (!res.ok) throw new Error(`Failed to load ${doc.id}`);
-        const data = await res.json();
-        const valid = data.filter(d => d.embedding?.length > 0 && d.chunk?.length > 0);
-        valid.forEach(d => {
-          chunks.push({
-            chunk: d.chunk,
-            embedding: d.embedding,
-            docId: doc.id,
-            docName: doc.name,
-            category: doc.category || 'guide',
-            authoritative: doc.authoritative || false,
-            icon: doc.icon || '📄',
-          });
-        });
-      } catch (e) {
-        console.warn(`Could not load ${doc.id}:`, e.message);
-      }
-      loaded++;
-      setLoadProgress({ loaded, total: registry.length });
-    }
-
-    if (!chunks.length) {
-      setDocsError('No valid embeddings found in any document.');
-    }
-    setAllChunks(chunks);
-    setLoadingDocs(false);
-  }
-
   // ─── Ask with Streaming ───
   const ask = useCallback(async (q) => {
     const text = q || question.trim();
     if (!text || stage) return;
-    if (!allChunks?.length) { setError('Documents not loaded yet.'); return; }
 
     setQuestion(text);
-    setStage('embedding');
+    setStage('searching');
     setError(null);
     setAnswer(null);
     setSources([]);
 
     try {
-      // 1. Embed the question
-      const questionEmbedding = await embedText(text);
+      // 1. Search docs via backend
+      const { chunks } = await searchDocs(text);
 
-      // 2. Cosine similarity search
-      setStage('searching');
-      const scored = allChunks.map(c => ({
-        ...c,
-        score: cosineSimilarity(questionEmbedding, c.embedding)
-      }));
-      scored.sort((a, b) => b.score - a.score);
-      const topChunks = scored.slice(0, 5);
+      if (!chunks?.length) {
+        setError('No relevant documents found.');
+        setStage(null);
+        return;
+      }
 
-      // 3. Build context
-      setStage('generating');
-      const contextParts = [];
-      topChunks.forEach((c, i) => {
-        contextParts.push(`[${i + 1}] [${c.docName}]\n${c.chunk}`);
-      });
-      const context = contextParts.join('\n\n');
+      setSources(chunks);
 
-      // Determine mode from majority category of top chunks
-      const govCount = topChunks.filter(c => c.authoritative).length;
-      const mode = govCount >= 3 ? 'government' : 'general';
-
-      // Sort sources: authoritative first, then by score
-      const sortedSources = [...topChunks].sort((a, b) => {
-        if (a.authoritative && !b.authoritative) return -1;
-        if (!a.authoritative && b.authoritative) return 1;
-        return b.score - a.score;
-      });
-
-      setSources(sortedSources.map((c, i) => ({
-        id: i + 1,
-        text: c.chunk,
-        docName: c.docName,
-        category: c.category,
-        authoritative: c.authoritative,
-        icon: c.icon,
-        score: Math.round(c.score * 1000) / 1000
-      })));
-
-      // 4. Stream the answer
+      // 2. Stream the answer
       setStage('streaming');
-      await askWithContextStream(text, context, (progressText) => {
+      await askWithContextStream(text, chunks, (progressText) => {
         setAnswer(progressText);
-      }, mode);
+      });
 
     } catch (err) {
       console.error(err);
@@ -203,7 +111,7 @@ export default function KnowledgeBase() {
       );
     }
     setStage(null);
-  }, [question, stage, allChunks]);
+  }, [question, stage]);
 
   // Auto-scroll answer into view
   useEffect(() => {
@@ -213,9 +121,6 @@ export default function KnowledgeBase() {
   }, [answer]);
 
   const isLoading = stage !== null;
-  const progressPct = loadProgress.total > 0
-    ? Math.round((loadProgress.loaded / loadProgress.total) * 100)
-    : 0;
 
   return (
     <div className="kb">
@@ -262,17 +167,9 @@ export default function KnowledgeBase() {
           </div>
         )}
 
-        {/* Loading with progress */}
         {loadingDocs && (
           <div className="kb-loading-docs">
-            <div className="kb-progress-wrap">
-              <div className="kb-progress-bar">
-                <div className="kb-progress-fill" style={{ width: `${progressPct}%` }} />
-              </div>
-              <span className="kb-progress-text">
-                Loading {loadProgress.loaded}/{loadProgress.total} documents...
-              </span>
-            </div>
+            <span>Loading documents...</span>
           </div>
         )}
 

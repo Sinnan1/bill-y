@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { initGemini, analyzeBill, askQuestion } from './gemini';
+import { analyzeBill, askQuestion } from './gemini';
 import { generatePDF } from './pdf';
 import {
   ConsumptionTrendChart,
@@ -400,15 +400,9 @@ export default function App() {
   const [preview, setPreview] = useState(null);
   const [billData, setBillData] = useState(null);
   const [error, setError] = useState(null);
-  const [apiKey, setApiKey] = useState(import.meta.env.VITE_GEMINI_API_KEY || '');
   const [loadingMsg, setLoadingMsg] = useState(0);
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef(null);
-
-  // Auto-initialize Gemini with the hardcoded key
-  useEffect(() => {
-    if (apiKey) initGemini(apiKey);
-  }, []);
 
   // Loading message rotation
   useEffect(() => {
@@ -447,21 +441,19 @@ export default function App() {
   }, [handleFile]);
 
   const handleAnalyze = async () => {
-    if (!apiKey) { setError('API key is missing in environment variables (.env file).'); return; }
     setError(null);
     setScreen('loading');
     setLoadingMsg(0);
     try {
-      initGemini(apiKey);
       const data = await analyzeBill(file);
       setBillData(data);
       setScreen('dashboard');
     } catch (err) {
       console.error(err);
       if (err.message?.includes('429') || err.message?.toLowerCase().includes('quota')) {
-        setError('Gemini API quota exceeded. Please try again later or use a different API key.');
+        setError('Gemini API quota exceeded. Please try again later.');
       } else if (err.message?.includes('API_KEY') || err.message?.includes('401') || err.message?.includes('403')) {
-        setError('Invalid API key in .env file. Please check and try again.');
+        setError('Server authentication error. Please contact support.');
       } else {
         setError('Failed to analyze the bill. Please try again with a clearer image.');
       }
