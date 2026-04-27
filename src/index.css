@@ -2296,9 +2296,101 @@ input,textarea{font-family:inherit}
 }
 .kb-answer-body {
   font-size: 0.95rem;
-  line-height: 1.7;
+  line-height: 1.75;
   color: var(--text-main);
-  white-space: pre-wrap;
+}
+
+/* Answer paragraphs */
+.kb-answer-p {
+  margin: 0 0 0.75em 0;
+}
+.kb-answer-p:last-child { margin-bottom: 0; }
+
+/* Answer headings */
+.kb-answer-h2 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 1.25em 0 0.5em;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+.kb-answer-h3 {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin: 1em 0 0.4em;
+}
+
+/* Answer bullet list */
+.kb-answer-list {
+  margin: 0.25em 0 0.85em 0;
+  padding-left: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+.kb-answer-list li {
+  display: flex;
+  gap: 0.6em;
+  align-items: flex-start;
+  line-height: 1.65;
+}
+.kb-answer-list li::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--primary);
+  flex-shrink: 0;
+  margin-top: 0.55em;
+}
+.kb-answer-list strong {
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+/* Citation badge — clickable inline [N] superscript */
+.kb-cite-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 4px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  background: var(--blue-light);
+  color: var(--blue);
+  border: 1px solid rgba(37,99,235,0.35);
+  cursor: pointer;
+  transition: all 0.15s;
+  vertical-align: super;
+  margin: 0 1px;
+  line-height: 1;
+  text-decoration: none;
+}
+.kb-cite-badge:hover {
+  background: var(--blue);
+  color: #fff;
+  border-color: var(--blue);
+  transform: scale(1.15);
+  box-shadow: 0 2px 8px rgba(37,99,235,0.3);
+}
+
+/* Invalid/hallucinated citation — dimmed, not clickable */
+.kb-cite-invalid {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  opacity: 0.5;
+  font-family: var(--font-mono);
+  cursor: default;
+  text-decoration: line-through;
 }
 
 /* Blinking cursor for streaming */
@@ -2404,6 +2496,42 @@ input,textarea{font-family:inherit}
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Source highlight flash when citation is clicked */
+@keyframes source-flash {
+  0%   { background: var(--blue-light); border-color: var(--blue); }
+  60%  { background: var(--blue-light); border-color: var(--blue); }
+  100% { background: transparent; border-color: transparent; }
+}
+.kb-source-highlight {
+  border-radius: var(--radius-sm);
+  animation: source-flash 1.8s var(--ease-out) forwards;
+}
+
+/* Source-id button — matches cite badges */
+.kb-source-id-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: 5px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  background: var(--blue-light);
+  color: var(--blue);
+  border: 1px solid var(--blue);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+  line-height: 1;
+}
+.kb-source-id-btn:hover {
+  background: var(--blue);
+  color: #fff;
 }
 
 /* ─── Error ─── */
@@ -2780,4 +2908,154 @@ input,textarea{font-family:inherit}
   padding: 2px 8px;
   border-radius: 4px;
   margin-right: var(--space-sm);
+}
+
+/* ─── SaaS Dashboard Layout ─── */
+.dash-kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
+}
+
+.dash-kpi-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md) var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+}
+
+.dash-kpi-label {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.dash-kpi-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.dash-kpi-value.danger { color: var(--red); }
+.dash-kpi-value.success { color: var(--green); }
+
+/* Tabs - Pill Style */
+.dash-tabs-container {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xl);
+  padding-bottom: var(--space-sm);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.dash-tabs-container::-webkit-scrollbar { display: none; }
+
+.dash-tab {
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.dash-tab:hover {
+  background: var(--bg-secondary);
+  color: var(--text-main);
+}
+
+.dash-tab.active {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.3);
+}
+
+.dash-panel {
+  animation: fadeUp 0.3s ease-out;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+}
+
+/* Floating Chat */
+.floating-chat-btn {
+  position: fixed;
+  bottom: var(--space-xl);
+  right: var(--space-xl);
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.4);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  z-index: 100;
+  transition: transform 0.2s ease;
+}
+
+.floating-chat-btn:hover {
+  transform: scale(1.05);
+}
+
+.floating-chat-panel {
+  position: fixed;
+  bottom: calc(var(--space-xl) + 70px);
+  right: var(--space-xl);
+  width: 400px;
+  max-width: calc(100vw - 2 * var(--space-xl));
+  height: 600px;
+  max-height: calc(100vh - 120px);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+  z-index: 99;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Override chat section to fit within the floating panel */
+.floating-chat-panel .chat-section {
+  flex: 1;
+  border: none;
+  box-shadow: none;
+  margin: 0;
+  border-radius: 0;
+  height: 100%;
+  max-width: 100%;
+}
+
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 640px) {
+  .floating-chat-panel {
+    bottom: 0;
+    right: 0;
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    max-width: 100vw;
+    border-radius: 0;
+  }
 }

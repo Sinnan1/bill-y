@@ -46,6 +46,110 @@ const SUGGESTED_QUESTIONS = [
   'What is the deadline for paying my bill before disconnection?',
 ];
 
+/* ═══════ Answer Renderer ═══════ */
+function renderAnswer(text, onCiteClick, isStreaming, maxSources = 99) {
+  if (!text) return null;
+
+  // Parse inline: **bold** and [N] or [N - Doc Name] citations
+  function parseInline(str, keyPrefix) {
+    const parts = [];
+    const regex = /\*\*(.+?)\*\*|\[(\d+)(?:\s*[-\u2013]\s*[^\]]+)?\]/g;
+    let last = 0, match, idx = 0;
+    while ((match = regex.exec(str)) !== null) {
+      if (match.index > last) parts.push(str.slice(last, match.index));
+      if (match[1] !== undefined) {
+        // Bold
+        parts.push(<strong key={`${keyPrefix}-b-${idx++}`}>{match[1]}</strong>);
+      } else if (match[2] !== undefined) {
+        const num = parseInt(match[2], 10);
+        if (num >= 1 && num <= maxSources) {
+          // Valid citation — clickable badge
+          parts.push(
+            <button
+              key={`${keyPrefix}-c-${idx++}`}
+              className="kb-cite-badge"
+              onClick={() => onCiteClick && onCiteClick(num)}
+              title={`Jump to source ${num}`}
+            >
+              {num}
+            </button>
+          );
+        } else {
+          // Out-of-range — render as dimmed text, not a badge
+          parts.push(
+            <span key={`${keyPrefix}-x-${idx++}`} className="kb-cite-invalid" title="Source not available">
+              [{num}]
+            </span>
+          );
+        }
+      }
+      last = match.index + match[0].length;
+    }
+    if (last < str.length) parts.push(str.slice(last));
+    return parts;
+  }
+
+  const lines = text.split('\n');
+  const elements = [];
+  let bullets = [];
+  let key = 0;
+
+  function flushBullets() {
+    if (bullets.length === 0) return;
+    elements.push(
+      <ul key={`ul-${key++}`} className="kb-answer-list">
+        {bullets}
+      </ul>
+    );
+    bullets = [];
+  }
+
+  lines.forEach((rawLine, i) => {
+    const line = rawLine.trim();
+    if (!line) { flushBullets(); return; }
+
+    const h3 = line.match(/^###\s+(.+)/);
+    const h2 = line.match(/^##\s+(.+)/);
+    if (h3) {
+      flushBullets();
+      elements.push(<h4 key={`h-${key++}`} className="kb-answer-h3">{parseInline(h3[1], `h-${key}`)}</h4>);
+      return;
+    }
+    if (h2) {
+      flushBullets();
+      elements.push(<h3 key={`h-${key++}`} className="kb-answer-h2">{parseInline(h2[1], `h-${key}`)}</h3>);
+      return;
+    }
+
+    const bullet = line.match(/^[\*\-\u2022]\s+(.+)/);
+    if (bullet) {
+      bullets.push(<li key={`li-${i}`}>{parseInline(bullet[1], `li-${i}`)}</li>);
+      return;
+    }
+
+    flushBullets();
+    elements.push(
+      <p key={`p-${key++}`} className="kb-answer-p">
+        {parseInline(line, `p-${key}`)}
+      </p>
+    );
+  });
+
+  flushBullets();
+
+  if (isStreaming && elements.length > 0) {
+    const last = elements[elements.length - 1];
+    elements[elements.length - 1] = (
+      <span key="last-wrap">
+        {last}
+        <span className="kb-cursor" />
+      </span>
+    );
+  }
+
+  return elements;
+}
+
 export default function KnowledgeBase() {
   const [docs, setDocs] = useState([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
@@ -56,6 +160,7 @@ export default function KnowledgeBase() {
   const [stage, setStage] = useState(null); // null | searching | generating | streaming
   const [error, setError] = useState(null);
   const answerRef = useRef(null);
+  const sourceRefs = useRef({});
 
   // ─── Load docs registry ───
   useEffect(() => {
@@ -72,6 +177,16 @@ export default function KnowledgeBase() {
         setDocsError(err.message);
         setLoadingDocs(false);
       });
+  }, []);
+
+  // ─── Scroll to a cited source ───
+  const scrollToSource = useCallback((num) => {
+    const el = sourceRefs.current[num];
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('kb-source-highlight');
+      setTimeout(() => el.classList.remove('kb-source-highlight'), 1800);
+    }
   }, []);
 
   // ─── Ask with Streaming ───
@@ -234,8 +349,7 @@ export default function KnowledgeBase() {
               )}
             </div>
             <div className="kb-answer-body">
-              {answer}
-              {stage === 'streaming' && <span className="kb-cursor" />}
+              {renderAnswer(answer, scrollToSource, stage === 'streaming', sources.length)}
             </div>
           </div>
         )}
@@ -243,12 +357,22 @@ export default function KnowledgeBase() {
         {/* Sources */}
         {sources.length > 0 && !stage && (
           <div className="kb-sources">
-            <h4 className="kb-sources-title">Sources</h4>
+            <h4 className="kb-sources-title">Sources used</h4>
             {sources.map(s => {
               const cat = CATEGORY_META[s.category] || CATEGORY_META.guide;
               return (
-                <div key={s.id} className="kb-source">
-                  <span className="kb-source-id">[{s.id}]</span>
+                <div
+                  key={s.id}
+                  className="kb-source"
+                  ref={el => { sourceRefs.current[s.id] = el; }}
+                >
+                  <button
+                    className="kb-source-id-btn"
+                    onClick={() => scrollToSource(s.id)}
+                    title={`Source ${s.id}`}
+                  >
+                    {s.id}
+                  </button>
                   <span className="kb-source-icon">{s.icon || cat.icon}</span>
                   <div className="kb-source-content">
                     <div className="kb-source-meta">
@@ -256,7 +380,7 @@ export default function KnowledgeBase() {
                       {s.authoritative && (
                         <span className="kb-source-auth">Gov</span>
                       )}
-                      <span className="kb-source-score">{s.score}</span>
+                      <span className="kb-source-score">score: {s.score}</span>
                     </div>
                     <span className="kb-source-text">{s.text}</span>
                   </div>

@@ -402,6 +402,8 @@ export default function App() {
   const [error, setError] = useState(null);
   const [loadingMsg, setLoadingMsg] = useState(0);
   const [dragOver, setDragOver] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const fileInputRef = useRef(null);
 
   // Loading message rotation
@@ -693,36 +695,74 @@ export default function App() {
       {screen === 'dashboard' && billData && (
         <main className="dashboard">
           <div className="container">
-            <SummaryCard data={billData} />
-
-            {/* Phase 1: Consumption Trend */}
-            <ConsumptionTrendChart data={billData} />
-
-            {/* Monthly Usage Calendar */}
-            <BillingCalendar data={billData} />
-
-            {/* Phase 2: Charge Breakdown */}
-            <ChargeBreakdownChart charges={billData.charges} />
-
-            {/* Phase 3: Bill Comparison */}
-            <BillComparisonChart recentBills={billData.recentBills} unitLabel={billData.unitLabel} />
-
-            {/* Phase 4: Billing Timeline */}
-            <BillingTimeline data={billData} />
-
-            {/* Phase 5: Savings Meter + Usage Gauge */}
-            <div className="section">
-              <div className="gauges-grid">
-                <SavingsMeter estimatedSavings={billData.estimatedSavings} recommendations={billData.recommendations} />
-                <UsageGauge unitsConsumed={billData.unitsConsumed} unitLabel={billData.unitLabel} billType={billData.billType} />
+            {/* KPI Strip */}
+            <div className="dash-kpi-strip">
+              <div className="dash-kpi-card">
+                <span className="dash-kpi-label">Total Amount</span>
+                <span className="dash-kpi-value">Rs. {(billData.totalAmount || 0).toLocaleString()}</span>
+              </div>
+              <div className="dash-kpi-card">
+                <span className="dash-kpi-label">Units Consumed</span>
+                <span className="dash-kpi-value">{billData.unitsConsumed || 0} {billData.unitLabel || ''}</span>
+              </div>
+              {billData.previousBillAmount > 0 && (
+                <div className="dash-kpi-card">
+                  <span className="dash-kpi-label">vs Last Month</span>
+                  <span className={`dash-kpi-value ${billData.totalAmount > billData.previousBillAmount ? 'danger' : 'success'}`}>
+                    {billData.totalAmount > billData.previousBillAmount ? '▲' : '▼'} {Math.abs(Math.round(((billData.totalAmount - billData.previousBillAmount) / billData.previousBillAmount) * 100))}%
+                  </span>
+                </div>
+              )}
+              <div className="dash-kpi-card">
+                <span className="dash-kpi-label">Due Date</span>
+                <span className={`dash-kpi-value ${billData.isPastDue ? 'danger' : ''}`}>{billData.dueDate || 'N/A'}{billData.isPastDue ? ' ⚠️' : ''}</span>
               </div>
             </div>
 
-            {billData.isNetMetering && <SolarCard nm={billData.netMetering} insights={billData.solarInsights} />}
-            <Recommendations recs={billData.recommendations} />
-            <ChargeTable charges={billData.charges} />
-            <ChatSection billData={billData} />
+            {/* Tabs */}
+            <div className="dash-tabs-container">
+              <button className={`dash-tab ${activeTab === 'overview' ? 'active' : ''}`} onClick={() => setActiveTab('overview')}>Overview</button>
+              <button className={`dash-tab ${activeTab === 'breakdown' ? 'active' : ''}`} onClick={() => setActiveTab('breakdown')}>Breakdown</button>
+              <button className={`dash-tab ${activeTab === 'history' ? 'active' : ''}`} onClick={() => setActiveTab('history')}>History</button>
+              {billData.isNetMetering && (
+                <button className={`dash-tab ${activeTab === 'solar' ? 'active' : ''}`} onClick={() => setActiveTab('solar')}>Solar</button>
+              )}
+            </div>
 
+            {/* Tab Content */}
+            <div className="dash-panel">
+              {activeTab === 'overview' && (
+                <>
+                  <SummaryCard data={billData} />
+                  <Recommendations recs={billData.recommendations} />
+                </>
+              )}
+              {activeTab === 'breakdown' && (
+                <>
+                  <ChargeBreakdownChart charges={billData.charges} />
+                  <ChargeTable charges={billData.charges} />
+                  <div className="section">
+                    <div className="gauges-grid">
+                      <SavingsMeter estimatedSavings={billData.estimatedSavings} recommendations={billData.recommendations} />
+                      <UsageGauge unitsConsumed={billData.unitsConsumed} unitLabel={billData.unitLabel} billType={billData.billType} />
+                    </div>
+                  </div>
+                </>
+              )}
+              {activeTab === 'history' && (
+                <>
+                  <ConsumptionTrendChart data={billData} />
+                  <BillComparisonChart recentBills={billData.recentBills} unitLabel={billData.unitLabel} />
+                  <BillingCalendar data={billData} />
+                  <BillingTimeline data={billData} />
+                </>
+              )}
+              {activeTab === 'solar' && billData.isNetMetering && (
+                <SolarCard nm={billData.netMetering} insights={billData.solarInsights} />
+              )}
+            </div>
+
+            {/* Footer Actions */}
             <div className="footer-actions">
               <button className="btn-primary" onClick={() => generatePDF(billData)}>
                 <DownloadIcon /> Download Summary
@@ -731,6 +771,17 @@ export default function App() {
                 <RefreshIcon /> Analyze Another Bill
               </button>
             </div>
+
+            {/* Floating Chat */}
+            <button className="floating-chat-btn" onClick={() => setIsChatOpen(!isChatOpen)} aria-label="Toggle AI Chat">
+              {isChatOpen ? <XIcon /> : <span style={{ fontSize: '1.4rem' }}>💬</span>}
+            </button>
+            
+            {isChatOpen && (
+              <div className="floating-chat-panel">
+                <ChatSection billData={billData} />
+              </div>
+            )}
           </div>
         </main>
       )}

@@ -116,32 +116,30 @@ Return ONLY valid JSON with this exact structure:
   ] or null
 }
 
-IMPORTANT RULES:
-- Read EVERY line item — do not skip any charge
+IMPORTANT RULES (ANTI-HALLUCINATION STRICT MODE):
+- Read EVERY line item — do not skip any charge.
 - For LESCO: look for Cost of Electricity, Fuel Price Adjustment, FC Surcharge, QTA, Fixed Charges, GST, ED, TV Fee, LP Surcharge, etc.
-- For net metering: look for Import/Export readings, MDI, DG-Capacity, credit details
-- All amounts in Pakistani Rupees
-- If you cannot read a value clearly, make your best estimate and note it
-- changeReasons: exactly 3 items
-- recommendations: 3-5 items, easiest to hardest
-- solarInsights: 2-3 items for net metering bills
-- CRITICAL: Extract the 12-month consumption history table if present
-- Extract "previous bills" or "bill comparison" section (last 3-6 months)
-- Extract bill issue date if printed
-- Do NOT calculate costPerUnit, estimatedSavings, or projections — raw values only`;
+- For net metering: look for Import/Export readings, MDI, DG-Capacity, credit details.
+- All amounts in Pakistani Rupees.
+- STRICT RULE: NEVER invent, hallucinate, or estimate numbers, dates, or charges. If a value is not clearly printed on the bill, return null or omit it. Do NOT guess or extrapolate.
+- changeReasons: List 1-3 reasons ONLY if there is actual evidence of change (e.g., new taxes, obvious seasonal jumps). If no obvious reason, return an empty array [].
+- recommendations: List 1-3 recommendations specifically relevant to the actual charges seen on this bill. Do NOT give generic advice if it doesn't apply.
+- solarInsights: Only provide insights if the bill clearly indicates net metering or solar data.
+- CRITICAL: Extract the 12-month consumption history table ONLY if present.
+- Extract "previous bills" or "bill comparison" section ONLY if present.
+- Extract bill issue date ONLY if printed.
+- Do NOT calculate costPerUnit, estimatedSavings, or projections — raw values only.`;
 
 const CHAT_PROMPT_PREFIX = `You are Bill-y, a Pakistani utility bill expert. The user has uploaded a bill and you analyzed it. Here is the analysis data:\n\n`;
 const CHAT_PROMPT_SUFFIX = `\n\nAnswer the user's question based on this specific bill data. Be conversational, specific with numbers, and helpful. If the question is about something not in the bill, say so honestly. Keep answers concise but thorough. Answer in English.`;
 
-function buildDocPrompt(question, context, mode = 'government') {
+function buildDocPrompt(question, context, mode = 'government', chunkCount = 5) {
   const toneGuide = mode === 'government'
     ? `You are Official Docs Expert, a STRICT government document assistant for Pakistani utility consumers.
 - Be authoritative. Only state facts from the documents.
-- Cite your sources precisely as: [1 - Document Name], [2 - Document Name], etc.
 - If the answer isn't in the excerpts, say "I couldn't find that in the official documents" and suggest what the user could ask instead.`
     : `You are Knowledge Base Assistant, a helpful guide for Pakistani utility consumers.
 - Be conversational and friendly while still accurate.
-- Reference your sources naturally, e.g. "According to the NEPRA manual..."
 - If the answer isn't in the excerpts, say so honestly and suggest related topics.`;
 
   return `${toneGuide}
@@ -152,6 +150,7 @@ RULES (CRITICAL):
 - NEVER use words like: "optimize", "mitigate", "leverage", "facilitate", "utilize"
 - Use simple words: "reduce", "save", "avoid", "check", "lower"
 - Keep answers under 150 words. Be direct and helpful.
+- CITATIONS: You have exactly ${chunkCount} source excerpts numbered [1] to [${chunkCount}]. Cite inline as [1], [2], etc. NEVER cite a number higher than [${chunkCount}]. Do NOT use [${chunkCount + 1}] or above — they do not exist.
 
 EXCERPTS:
 ${context}
@@ -169,6 +168,39 @@ async function generateWithRetry(config, attempt = 1) {
       await new Promise(r => setTimeout(r, 2000));
       return generateWithRetry(config, attempt + 1);
     }
+    throw err;
+  }
+}
+
+// ─── Streaming Retry Helper ───
+// Retries with exponential backoff; falls back to gemini-1.5-flash on 503
+const FALLBACK_MODEL = 'gemini-3.1-flash-lite-preview';
+async function streamWithRetry(config, res, attempt = 1) {
+  const isLastAttempt = attempt > 3;
+  try {
+    const response = await ai.models.generateContentStream(config);
+    for await (const chunk of response) {
+      const text = chunk.text;
+      if (text) res.write(text);
+    }
+  } catch (err) {
+    const status = err?.status || err?.cause?.status || err?.response?.status;
+    const isRetryable = status === 503 || status === 429;
+
+    if (isRetryable && !isLastAttempt) {
+      const delay = Math.min(1000 * Math.pow(2, attempt - 1), 4000); // 1s, 2s, 4s
+      console.warn(`⚠️  Stream attempt ${attempt} failed (${status}), retrying in ${delay}ms…`);
+      await new Promise(r => setTimeout(r, delay));
+
+      // On the 3rd attempt, fall back to a smaller model
+      if (attempt === 2 && config.model !== FALLBACK_MODEL) {
+        console.warn(`⚠️  Falling back to ${FALLBACK_MODEL}`);
+        config = { ...config, model: FALLBACK_MODEL };
+      }
+
+      return streamWithRetry(config, res, attempt + 1);
+    }
+
     throw err;
   }
 }
@@ -285,7 +317,7 @@ app.post('/api/chat', async (req, res) => {
     const prompt = CHAT_PROMPT_PREFIX + JSON.stringify(billData, null, 2) + CHAT_PROMPT_SUFFIX + '\n\nUser question: ' + question;
 
     const result = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
+      model: 'gemini-2.5-flash',
       contents: [{ role: 'user', parts: [{ text: prompt }] }]
     });
 
@@ -302,23 +334,20 @@ app.post('/api/chat/stream', async (req, res) => {
     const { question, billData } = req.body;
     const prompt = CHAT_PROMPT_PREFIX + JSON.stringify(billData, null, 2) + CHAT_PROMPT_SUFFIX + '\n\nUser question: ' + question;
 
-    const response = await ai.models.generateContentStream({
-      model: 'gemini-2.0-flash',
-      contents: [{ role: 'user', parts: [{ text: prompt }] }]
-    });
-
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    for await (const chunk of response) {
-      const text = chunk.text;
-      if (text) res.write(text);
-    }
+    await streamWithRetry({
+      model: 'gemini-2.5-flash',
+      contents: [{ role: 'user', parts: [{ text: prompt }] }]
+    }, res);
+
     res.end();
   } catch (err) {
     console.error('chat stream error:', err.message);
-    res.status(500).end();
+    if (!res.headersSent) res.status(500).end();
+    else res.end();
   }
 });
 
@@ -436,25 +465,22 @@ app.post('/api/kb/answer', async (req, res) => {
 
     const contextParts = chunks.map((c, i) => `[${i + 1}] [${c.docName}]\n${c.text}`);
     const context = contextParts.join('\n\n');
-    const prompt = buildDocPrompt(question, context, mode);
-
-    const response = await ai.models.generateContentStream({
-      model: 'gemini-2.0-flash',
-      contents: [{ role: 'user', parts: [{ text: prompt }] }]
-    });
+    const prompt = buildDocPrompt(question, context, mode, chunks.length);
 
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
 
-    for await (const chunk of response) {
-      const text = chunk.text;
-      if (text) res.write(text);
-    }
+    await streamWithRetry({
+      model: 'gemini-2.5-flash',
+      contents: [{ role: 'user', parts: [{ text: prompt }] }]
+    }, res);
+
     res.end();
   } catch (err) {
     console.error('kb answer error:', err.message);
-    res.status(500).end();
+    if (!res.headersSent) res.status(500).end();
+    else res.end();
   }
 });
 
