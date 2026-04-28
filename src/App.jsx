@@ -56,6 +56,16 @@ const TriangleIcon = () => (
     <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" fill="currentColor" fillOpacity="0.2" />
   </svg>
 );
+const MenuIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+  </svg>
+);
+const CloseIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
 
 /* ═══════ Loading Messages ═══════ */
 const LOADING_MSGS = [
@@ -880,6 +890,7 @@ export default function App() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isDemo, setIsDemo] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -1014,6 +1025,7 @@ export default function App() {
   };
 
   const navigateToSection = (id) => {
+    setMobileMenuOpen(false);
     if (screen !== 'landing' || file) {
       reset();
       setTimeout(() => {
@@ -1024,21 +1036,30 @@ export default function App() {
     }
   };
 
+  const goToDocs = () => {
+    setMobileMenuOpen(false);
+    setScreen('official-docs');
+  };
+
   return (
     <div className="app">
       {/* Header */}
       <header className="header">
         <div className="container header-inner">
-          <div className="logo" onClick={reset}>
+          <div className="logo" onClick={() => { setMobileMenuOpen(false); reset(); }}>
             <img src="/logo.webp" alt="Bill-y Logo" className="logo-img" />
             <span className="logo-text">Bill-y</span>
           </div>
+
+          {/* Desktop Nav */}
           <nav className="header-nav">
             <a href="#features" onClick={(e) => { e.preventDefault(); navigateToSection('features'); }}>Features</a>
             <a href="#compare" onClick={(e) => { e.preventDefault(); navigateToSection('compare'); }}>Compare</a>
-            <a href="#docs" onClick={(e) => { e.preventDefault(); setScreen('official-docs'); }}>Knowledge Base</a>
+            <a href="#docs" onClick={(e) => { e.preventDefault(); goToDocs(); }}>Knowledge Base</a>
           </nav>
-          <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+
+          {/* Desktop Actions */}
+          <div className="header-actions desktop-actions">
             <div
               className={`demo-switch-container ${isDemo ? 'active' : ''}`}
               onClick={() => setIsDemo(!isDemo)}
@@ -1054,7 +1075,6 @@ export default function App() {
               onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
               aria-label="Toggle dark mode"
               title="Toggle dark mode"
-              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-main)', borderRadius: 'var(--radius-sm)' }}
             >
               {theme === 'light' ? (
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
@@ -1062,7 +1082,7 @@ export default function App() {
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
               )}
             </button>
-            <button className="btn-primary" style={{ padding: '8px 16px', fontSize: '0.85rem' }} onClick={() => {
+            <button className="btn-primary header-scan-btn" onClick={() => {
               if (isDemo) {
                 setFile({ name: 'demo-bill-A.jpg', size: 145820, type: 'image/jpeg' });
                 setPreview('/demo-bill.jpg');
@@ -1073,8 +1093,68 @@ export default function App() {
               Scan a bill
             </button>
           </div>
+
+          {/* Mobile Actions */}
+          <div className="header-actions mobile-actions">
+            <button className="btn-primary header-scan-btn" onClick={() => {
+              if (isDemo) {
+                setFile({ name: 'demo-bill-A.jpg', size: 145820, type: 'image/jpeg' });
+                setPreview('/demo-bill.jpg');
+              } else {
+                fileInputRef.current?.click();
+              }
+            }}>
+              Scan
+            </button>
+            <button
+              className="mobile-menu-btn"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle menu"
+              aria-expanded={mobileMenuOpen}
+            >
+              {mobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
+            </button>
+          </div>
         </div>
+
       </header>
+
+      {/* Mobile Drawer — outside header so position:fixed is viewport-relative */}
+      {mobileMenuOpen && (
+        <div className="mobile-drawer">
+          <div className="mobile-drawer-backdrop" onClick={() => setMobileMenuOpen(false)} />
+          <div className="mobile-drawer-panel">
+            <nav className="mobile-drawer-nav">
+              <a href="#features" onClick={(e) => { e.preventDefault(); navigateToSection('features'); }}>Features</a>
+              <a href="#compare" onClick={(e) => { e.preventDefault(); navigateToSection('compare'); }}>Compare Bills</a>
+              <a href="#docs" onClick={(e) => { e.preventDefault(); goToDocs(); }}>Knowledge Base</a>
+            </nav>
+            <div className="mobile-drawer-tools">
+              <div
+                className={`demo-switch-container ${isDemo ? 'active' : ''}`}
+                onClick={() => setIsDemo(!isDemo)}
+                title="Toggle Global Demo Mode"
+              >
+                <span className="demo-label">Demo Mode</span>
+                <div className="demo-switch">
+                  <div className="demo-switch-handle"></div>
+                </div>
+              </div>
+              <button
+                className="theme-toggle drawer-theme-toggle"
+                onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
+                aria-label="Toggle dark mode"
+              >
+                {theme === 'light' ? (
+                  <><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg> Dark mode</>
+                ) : (
+                  <><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg> Light mode</>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* LANDING SCREEN */}
       {screen === 'landing' && (
