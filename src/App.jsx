@@ -1013,6 +1013,17 @@ export default function App() {
     setIsDemo(false);
   };
 
+  const navigateToSection = (id) => {
+    if (screen !== 'landing' || file) {
+      reset();
+      setTimeout(() => {
+        document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+      }, 150);
+    } else {
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="app">
       {/* Header */}
@@ -1023,8 +1034,8 @@ export default function App() {
             <span className="logo-text">Bill-y</span>
           </div>
           <nav className="header-nav">
-            <a href="#features" onClick={(e) => { e.preventDefault(); document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }); }}>Features</a>
-            <a href="#compare" onClick={(e) => { e.preventDefault(); document.getElementById('compare')?.scrollIntoView({ behavior: 'smooth' }); }}>Compare</a>
+            <a href="#features" onClick={(e) => { e.preventDefault(); navigateToSection('features'); }}>Features</a>
+            <a href="#compare" onClick={(e) => { e.preventDefault(); navigateToSection('compare'); }}>Compare</a>
             <a href="#docs" onClick={(e) => { e.preventDefault(); setScreen('official-docs'); }}>Knowledge Base</a>
           </nav>
           <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -1072,7 +1083,7 @@ export default function App() {
             <>
               <div className="hero-container">
                 <div className="hero-content">
-                  <div className="hero-badge animate-on-scroll fade-up">
+                  <div className="hero-badge animate-entrance stagger-1">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
                       <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
@@ -1080,16 +1091,16 @@ export default function App() {
                     Stop overpaying for utilities.
                   </div>
 
-                  <h1 className="hero-title animate-on-scroll fade-up delay-100">
+                  <h1 className="hero-title animate-entrance stagger-2">
                     Decode your bill.<br />Lower your costs.
                   </h1>
 
-                  <p className="hero-subtitle animate-on-scroll fade-up delay-200">
+                  <p className="hero-subtitle animate-entrance stagger-3">
                     Upload your LESCO, SNGPL, or WASA bill. We'll explain the hidden charges, verify your tariff, and find ways to save.
                   </p>
 
-                  <div className="hero-actions animate-on-scroll fade-up delay-300">
-                    <button className="btn-primary" onClick={() => {
+                  <div className="hero-actions animate-entrance stagger-4">
+                    <button className="btn-primary hover-spring" onClick={() => {
                       setCompareMode(false);
                       if (isDemo) {
                         setFile({ name: 'demo-bill-A.jpg', size: 145820, type: 'image/jpeg' });
@@ -1100,7 +1111,7 @@ export default function App() {
                     }}>
                       Scan your bill
                     </button>
-                    <button className={`btn-secondary ${compareMode ? 'active' : ''}`} onClick={() => {
+                    <button className={`btn-secondary hover-spring ${compareMode ? 'active' : ''}`} onClick={() => {
                       setCompareMode(true);
                       if (isDemo) {
                         setFile({ name: 'demo-bill-A.jpg', size: 145820, type: 'image/jpeg' });
@@ -1111,26 +1122,26 @@ export default function App() {
                     }}>
                       Compare two bills
                     </button>
-                    <button className="btn-nepra" onClick={() => setScreen('official-docs')}>
+                    <button className="btn-nepra hover-spring" onClick={() => setScreen('official-docs')}>
                       Search knowledge base
                     </button>
                   </div>
 
-                  <div className="hero-meta animate-on-scroll fade-up delay-400">
+                  <div className="hero-meta animate-entrance stagger-4" style={{ marginTop: '1.5rem' }}>
                     No signup required • Takes 5 seconds • 100% free
                   </div>
 
-                  <div className="trusted-by animate-on-scroll fade-up delay-500">
+                  <div className="trusted-by animate-entrance stagger-4" style={{ marginTop: '3rem' }}>
                     <span className="trusted-title">Supports all major Pakistani utility providers</span>
                     <div className="trusted-logos">
-                      <span className="t-logo">LESCO <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg></span>
-                      <span className="t-logo">SNGPL <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg></span>
-                      <span className="t-logo">WASA <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg></span>
+                      <span className="t-logo hover-spring">LESCO <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg></span>
+                      <span className="t-logo hover-spring">SNGPL <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg></span>
+                      <span className="t-logo hover-spring">WASA <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg></span>
                     </div>
                   </div>
                 </div>
 
-                <div className="hero-visual animate-on-scroll fade-left delay-200">
+                <div className="hero-visual animate-entrance stagger-2">
                   {compareMode ? (
                     <div className="compare-upload-grid">
                       <div
@@ -1208,7 +1219,7 @@ export default function App() {
                       {/* Center Upload Node */}
                       <div className="hero-center-wrapper">
                         <button
-                          className={`abstract-node ${dragOver ? 'drag-over' : ''}`}
+                          className={`abstract-node animate-pulse-glow hover-spring ${dragOver ? 'drag-over' : ''}`}
                           onDragOver={e => { e.preventDefault(); setDragOver(true); }}
                           onDragLeave={() => setDragOver(false)}
                           onDrop={e => handleDrop(e, 'file1')}
@@ -1263,6 +1274,13 @@ export default function App() {
 
                   {error && <div className="error-banner" style={{ position: 'absolute', bottom: '-80px', width: '100%' }}>{error}</div>}
                 </div>
+
+                <div className="scroll-indicator" onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}>
+                  <span>Explore Features</span>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M7 13l5 5 5-5M7 6l5 5 5-5" />
+                  </svg>
+                </div>
               </div>
 
               {/* FEATURE SECTIONS */}
@@ -1280,7 +1298,7 @@ export default function App() {
                     </ul>
                   </div>
                   <div className="feature-showcase-visual animate-on-scroll fade-left delay-200">
-                    <div className="mockup-card">
+                    <div className="mockup-card hover-lift">
                       <div className="mockup-header">
                         <span className="mockup-dot"></span>
                         <span className="mockup-dot"></span>
@@ -1315,7 +1333,7 @@ export default function App() {
                     <button className="btn-secondary" style={{ marginTop: '1rem', background: 'var(--bg-card)', border: '1px solid var(--border)', padding: '10px 20px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }} onClick={() => { setCompareMode(true); window.scrollTo({ top: 0, behavior: 'smooth' }); fileInput2Ref.current?.click(); }}>Compare your bills</button>
                   </div>
                   <div className="feature-showcase-visual animate-on-scroll fade-right delay-200">
-                    <div className="mockup-diff-table">
+                    <div className="mockup-diff-table hover-lift">
                       <div className="diff-row header"><span>Charge</span><span>Change</span></div>
                       <div className="diff-row"><span>Energy Cost</span><span className="text-red">+ Rs. 1,200</span></div>
                       <div className="diff-row"><span>Fuel Adj.</span><span className="text-green">- Rs. 400</span></div>
@@ -1334,7 +1352,7 @@ export default function App() {
                     <button className="btn-secondary" style={{ marginTop: '1rem', background: 'var(--bg-card)', color: 'var(--text-main)', border: '1px solid var(--border)', padding: '10px 20px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }} onClick={() => setScreen('official-docs')}>Search the Docs</button>
                   </div>
                   <div className="feature-showcase-visual animate-on-scroll fade-left delay-200">
-                    <div className="mockup-search">
+                    <div className="mockup-search hover-lift">
                       <div className="mockup-search-bar">What is the tax rate for non-filers?</div>
                       <div className="mockup-search-result">
                         <strong>Section 235A:</strong> Non-filers are subject to a 7.5% advance tax on electricity bills exceeding Rs. 25,000...
@@ -1605,27 +1623,28 @@ export default function App() {
           <div className="footer-inner">
             <div className="footer-grid">
               <div className="footer-col">
-                <h4>Product</h4>
+                <h4>Bill-y</h4>
                 <ul>
-                  <li><a href="#" onClick={(e) => { e.preventDefault(); setScreen('landing'); }}>Home</a></li>
-                  <li><a href="#" onClick={(e) => { e.preventDefault(); setScreen('comparison'); }}>Compare Bills</a></li>
-                  <li><a href="#" onClick={(e) => { e.preventDefault(); setScreen('official-docs'); }}>Knowledge Base</a></li>
+                  <li><a href="#" onClick={(e) => { e.preventDefault(); reset(); window.scrollTo({top: 0, behavior: 'smooth'}); }}>Home</a></li>
+                  <li><a href="#features" onClick={(e) => { e.preventDefault(); navigateToSection('features'); }}>Features</a></li>
+                  <li><a href="#compare" onClick={(e) => { e.preventDefault(); navigateToSection('compare'); }}>Compare Bills</a></li>
+                  <li><a href="#docs" onClick={(e) => { e.preventDefault(); setScreen('official-docs'); }}>Knowledge Base</a></li>
                 </ul>
               </div>
               <div className="footer-col">
-                <h4>Support</h4>
+                <h4>Utility Providers</h4>
                 <ul>
-                  <li><a href="#">Help Center</a></li>
-                  <li><a href="#">API Docs</a></li>
-                  <li><a href="#">Terms of Service</a></li>
+                  <li><a href="#" onClick={(e) => e.preventDefault()}>LESCO (Electric)</a></li>
+                  <li><a href="#" onClick={(e) => e.preventDefault()}>SNGPL (Gas)</a></li>
+                  <li><a href="#" onClick={(e) => e.preventDefault()}>WASA (Water)</a></li>
+                  <li><a href="#" onClick={(e) => e.preventDefault()}>K-Electric (Soon)</a></li>
                 </ul>
               </div>
               <div className="footer-col">
-                <h4>Social</h4>
+                <h4>Open Source</h4>
                 <ul>
-                  <li><a href="#">Twitter</a></li>
-                  <li><a href="#">GitHub</a></li>
-                  <li><a href="#">LinkedIn</a></li>
+                  <li><a href="https://github.com/Sinnan1/bill-y" target="_blank" rel="noopener noreferrer">GitHub Repository</a></li>
+                  <li><a href="#" onClick={(e) => e.preventDefault()}>MIT License</a></li>
                 </ul>
               </div>
             </div>

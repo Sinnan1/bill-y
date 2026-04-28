@@ -11,10 +11,10 @@
   {
     "id": "netmetering-guidelines",
     "name": "Net Metering Guidelines for Consumers",
-    "category": "guide",
-    "authoritative": false,
-    "icon": "📘",
-    "description": "Auto-generated entry",
+    "category": "government",
+    "authoritative": true,
+    "icon": "🏛️",
+    "description": "Official guidelines for net-metering installation and application procedures.",
     "embeddingsFile": "/embeddings/netmetering-guidelines.json"
   },
   {
