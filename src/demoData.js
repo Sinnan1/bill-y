@@ -1,10 +1,10 @@
 /**
- * Demo Mode — Pre-analyzed LESCO bill data
- * Allows users to experience the full dashboard without uploading a real bill.
- * This data mirrors the exact structure returned by the Gemini analysis + addDerivedData().
+ * Demo Mode Data
+ * Contains simulated data for the Main Dashboard, Comparison Dashboard, and Knowledge Base.
  */
 
-const DEMO_BILL = {
+export const DEMO_BILL_A = {
+  confidenceScore: 98,
   billType: "LESCO Net Metering Bill",
   billingMonth: "Apr 2026",
   totalAmount: 4214,
@@ -18,14 +18,24 @@ const DEMO_BILL = {
   issueDate: "21 Apr 2026",
 
   netMetering: {
+    importOffPeak: 659,
+    importPeak: 236,
+    exportOffPeak: 1648,
+    exportPeak: 0,
+    netOffPeak: -989,
+    netPeak: 236,
+    gopTariffOffPeak: 34.53,
+    gopTariffPeak: 46.85,
     unitsImported: 895, 
     unitsExported: 1648,
     netPosition: -753, 
     creditValue: 0, 
-    isOverExporting: true, // EXP-MDI 16.06 > DG-CAPACITY 13.34
+    isOverExporting: true,
     expMdi: 16.06,
     dgCapacity: 13.34,
-    monthInQuarter: 1
+    monthInQuarter: 1,
+    accumulatedCredit: 0,
+    monthsToSettlement: 2
   },
 
   solarInsights: [
@@ -114,19 +124,138 @@ const DEMO_BILL = {
     { month: "Apr 2026", units: -753, amount: 4214 }
   ],
 
-  // ─── Derived data (normally computed by addDerivedData on server) ───
   estimatedSavings: 14500,
-
   savingsProjection: [
     { month: "May 2026", projectedUnits: -900, projectedAmount: 4214 },
     { month: "Jun 2026", projectedUnits: -200, projectedAmount: 4214 }
   ]
 };
 
-// Ensure recentBills have costPerUnit
-DEMO_BILL.recentBills = DEMO_BILL.recentBills.map(b => ({
+DEMO_BILL_A.recentBills = DEMO_BILL_A.recentBills.map(b => ({
   ...b,
-  costPerUnit: b.units > 0 ? Math.round((b.amount / b.units) * 100) / 100 : 0
+  costPerUnit: b.units !== 0 ? Math.round(Math.abs(b.amount / b.units) * 100) / 100 : 0
 }));
 
-export default DEMO_BILL;
+
+export const DEMO_BILL_B = {
+  billType: "Standard Domestic Bill",
+  billingMonth: "Apr 2026",
+  totalAmount: 38450,
+  dueDate: "29 Apr 2026",
+  isPastDue: false,
+  unitsConsumed: 850,
+  unitLabel: "kWh",
+  previousBillAmount: 35200,
+  comparisonText: "Rs. 3,250 more than last month",
+  isNetMetering: false,
+  issueDate: "21 Apr 2026",
+
+  netMetering: null,
+
+  solarInsights: [],
+
+  charges: [
+    {
+      name: "Cost of Electricity",
+      amount: 28900,
+      explanation: "Base energy charge for 850 units consumed.",
+      status: "NORMAL"
+    },
+    {
+      name: "FPA (Fuel Price Adj)",
+      amount: 3200,
+      explanation: "Fuel price adjustment applied to previous month's usage.",
+      status: "NORMAL"
+    },
+    {
+      name: "GST & Taxes",
+      amount: 6350,
+      explanation: "General Sales Tax and other government levies.",
+      status: "GOVERNMENT"
+    }
+  ],
+
+  changeReasons: [
+    {
+      icon: "📈",
+      title: "High energy consumption",
+      explanation: "Your usage increased by 40 units compared to last month due to seasonal changes.",
+      type: "usage"
+    }
+  ],
+
+  recommendations: [
+    {
+      effort: "HIGH",
+      title: "Install a 10kW Solar System",
+      explanation: "Based on your consistent high usage, a 10kW solar system could eliminate your energy charges entirely.",
+      savings: "Rs. 35,000+"
+    }
+  ],
+
+  consumptionHistory: [
+    { month: "Apr 2025", units: 750, amount: 32000 },
+    { month: "May 2025", units: 950, amount: 45000 },
+    { month: "Jun 2025", units: 1200, amount: 65000 },
+    { month: "Jul 2025", units: 1100, amount: 58000 },
+    { month: "Aug 2025", units: 1050, amount: 54000 },
+    { month: "Sep 2025", units: 900, amount: 41000 },
+    { month: "Oct 2025", units: 800, amount: 35000 },
+    { month: "Nov 2025", units: 700, amount: 29000 },
+    { month: "Dec 2025", units: 650, amount: 26000 },
+    { month: "Jan 2026", units: 720, amount: 30000 },
+    { month: "Feb 2026", units: 780, amount: 33000 },
+    { month: "Mar 2026", units: 810, amount: 35200 },
+    { month: "Apr 2026", units: 850, amount: 38450 }
+  ],
+
+  recentBills: [
+    { month: "Feb 2026", units: 780, amount: 33000 },
+    { month: "Mar 2026", units: 810, amount: 35200 },
+    { month: "Apr 2026", units: 850, amount: 38450 }
+  ]
+};
+
+export const DEMO_COMPARE_DATA = {
+  billA: {
+    month: "Bill A (Solar)",
+    totalAmount: DEMO_BILL_A.totalAmount,
+    unitsConsumed: DEMO_BILL_A.unitsConsumed,
+    costPerUnit: DEMO_BILL_A.costPerUnit || (DEMO_BILL_A.unitsConsumed !== 0 ? Math.abs(DEMO_BILL_A.totalAmount / DEMO_BILL_A.unitsConsumed) : 0),
+    isNetMetering: true,
+    netMetering: DEMO_BILL_A.netMetering,
+    charges: DEMO_BILL_A.charges
+  },
+  billB: {
+    month: "Bill B (No Solar)",
+    totalAmount: DEMO_BILL_B.totalAmount,
+    unitsConsumed: DEMO_BILL_B.unitsConsumed,
+    costPerUnit: DEMO_BILL_B.costPerUnit || (DEMO_BILL_B.unitsConsumed !== 0 ? Math.abs(DEMO_BILL_B.totalAmount / DEMO_BILL_B.unitsConsumed) : 0),
+    isNetMetering: false,
+    charges: DEMO_BILL_B.charges
+  },
+  solarAnalysis: {
+    bothSolar: false,
+    billAHasSolar: true,
+    billBHasSolar: false,
+    nonSolarBill: 'B',
+    recommendedSystem: '10kW System',
+    estimatedMonthlySavings: 34000,
+    roiMonths: 36
+  },
+  majorChanges: [
+    {
+      category: "Cost of Electricity",
+      difference: 28900,
+      description: "Bill B paid Rs. 28,900 for base energy, whereas Bill A paid Rs. 0 thanks to solar exports."
+    },
+    {
+      category: "Taxes & Levies",
+      difference: 5707,
+      description: "Bill B paid significantly higher taxes because taxes scale with energy cost."
+    }
+  ],
+  verdict: "Bill A's solar installation saved them Rs. 34,236 compared to Bill B. We highly recommend exploring a 10kW solar system for Bill B."
+};
+
+export const DEMO_KNOWLEDGE_DOCS = "Hello! I am currently in Demo Mode, so I'm not connected to the live Gemini API. However, in a real scenario, I would analyze your question against the official LESCO tariff and government NEPRA regulations to provide an accurate, streaming response with citations.";

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { searchDocs, askWithContextStream } from './gemini';
+import { DEMO_KNOWLEDGE_DOCS } from './demoData';
 
 /* ═══════ SVG Icons ═══════ */
 const SearchIcon = () => (
@@ -150,7 +151,7 @@ function renderAnswer(text, onCiteClick, isStreaming, maxSources = 99) {
   return elements;
 }
 
-export default function KnowledgeBase() {
+export default function KnowledgeBase({ isDemo }) {
   const [docs, setDocs] = useState([]);
   const [loadingDocs, setLoadingDocs] = useState(true);
   const [docsError, setDocsError] = useState(null);
@@ -201,6 +202,34 @@ export default function KnowledgeBase() {
     setSources([]);
 
     try {
+      if (isDemo) {
+        setSources([{
+          id: 1,
+          category: 'guide',
+          docName: 'Demo Mode Example Document',
+          authoritative: true,
+          score: 0.99,
+          text: 'This is a simulated document excerpt for the Demo Mode. No real API calls are made.'
+        }]);
+        setStage('streaming');
+        
+        let currentText = '';
+        const words = DEMO_KNOWLEDGE_DOCS.split(' ');
+        let idx = 0;
+        
+        const streamInterval = setInterval(() => {
+          if (idx < words.length) {
+            currentText += (idx > 0 ? ' ' : '') + words[idx];
+            setAnswer(currentText);
+            idx++;
+          } else {
+            clearInterval(streamInterval);
+            setStage(null);
+          }
+        }, 50);
+        return;
+      }
+
       // 1. Search docs via backend
       const { chunks } = await searchDocs(text);
 
@@ -226,7 +255,7 @@ export default function KnowledgeBase() {
       );
     }
     setStage(null);
-  }, [question, stage]);
+  }, [question, stage, isDemo]);
 
   // Auto-scroll answer into view
   useEffect(() => {

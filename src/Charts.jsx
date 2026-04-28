@@ -61,22 +61,28 @@ export function ConsumptionTrendChart({ data }) {
     const idx = history.findIndex(h => h.month === currentMonth);
     const currentIndex = idx >= 0 ? idx : history.length - 1;
 
-    // Build chart data
+    // Build unified chart data
     const cData = history.map((h, i) => ({
       ...h,
-      index: i,
+      displayUnits: h.units,
+      displayAmount: h.amount,
+      projectionUnits: i === currentIndex ? h.units : null,
+      projectionAmount: i === currentIndex ? h.amount : null,
       isCurrent: i === currentIndex,
-      costPerUnit: h.units > 0 ? Math.round((h.amount / h.units) * 100) / 100 : 0
+      isProjection: false,
+      costPerUnit: h.units !== 0 ? Math.round(Math.abs(h.amount / h.units) * 100) / 100 : 0
     }));
 
     // Add projection points
-    projection.forEach((p, i) => {
+    projection.forEach((p) => {
       cData.push({
         month: p.month,
-        units: p.projectedUnits,
-        amount: p.projectedAmount,
-        index: history.length + i,
+        displayUnits: null, // Don't show in history lines
+        displayAmount: null,
+        projectionUnits: p.projectedUnits,
+        projectionAmount: p.projectedAmount,
         isProjection: true,
+        isCurrent: false,
         costPerUnit: p.projectedUnits > 0 ? Math.round((p.projectedAmount / p.projectedUnits) * 100) / 100 : 0
       });
     });
@@ -110,8 +116,9 @@ export function ConsumptionTrendChart({ data }) {
     );
   }
 
-  const avgUnits = Math.round(chartData.filter(d => !d.isProjection).reduce((s, d) => s + d.units, 0) / chartData.filter(d => !d.isProjection).length);
-  const maxUnits = Math.max(...chartData.map(d => d.units));
+  const historyPoints = chartData.filter(d => !d.isProjection);
+  const avgUnits = Math.round(historyPoints.reduce((s, d) => s + (d.displayUnits || 0), 0) / historyPoints.length);
+  const maxUnits = Math.max(...chartData.map(d => d.displayUnits || d.projectionUnits || 0));
 
   return (
     <div className="section">
@@ -137,29 +144,25 @@ export function ConsumptionTrendChart({ data }) {
         <ResponsiveContainer width="100%" height={360}>
           <ComposedChart
             data={chartData}
-            margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
+            margin={{ top: 40, right: 30, left: 10, bottom: 0 }}
           >
             <defs>
               <linearGradient id="unitsGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor={COLORS.blue} stopOpacity={0.15} />
                 <stop offset="95%" stopColor={COLORS.blue} stopOpacity={0} />
               </linearGradient>
-              <linearGradient id="projectionGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={COLORS.green} stopOpacity={0.1} />
-                <stop offset="95%" stopColor={COLORS.green} stopOpacity={0} />
-              </linearGradient>
             </defs>
             <CartesianGrid strokeDasharray="3 3" stroke={COLORS.border} vertical={false} />
             <XAxis
               dataKey="month"
-              tick={{ fontSize: 11, fill: COLORS.textMuted, fontFamily: 'JetBrains Mono, monospace' }}
+              tick={{ fontSize: 11, fill: COLORS.textMuted, fontFamily: 'var(--font-sans)' }}
               axisLine={false}
               tickLine={false}
               interval="preserveStartEnd"
             />
             <YAxis
               yAxisId="units"
-              tick={{ fontSize: 11, fill: COLORS.textMuted, fontFamily: 'JetBrains Mono, monospace' }}
+              tick={{ fontSize: 11, fill: COLORS.textMuted }}
               axisLine={false}
               tickLine={false}
               label={{ value: data.unitLabel, angle: -90, position: 'insideLeft', style: { fontSize: 11, fill: COLORS.textDim } }}
@@ -167,19 +170,22 @@ export function ConsumptionTrendChart({ data }) {
             <YAxis
               yAxisId="amount"
               orientation="right"
-              tick={{ fontSize: 11, fill: COLORS.textMuted, fontFamily: 'JetBrains Mono, monospace' }}
+              tick={{ fontSize: 11, fill: COLORS.textMuted }}
               axisLine={false}
               tickLine={false}
               tickFormatter={v => `Rs.${(v / 1000).toFixed(0)}k`}
               label={{ value: 'Amount', angle: 90, position: 'insideRight', style: { fontSize: 11, fill: COLORS.textDim } }}
             />
-            <Tooltip content={<ChartTooltip formatter={(v, name) => {
-              if (name === 'Units') return `${v.toLocaleString()} ${data.unitLabel}`;
-              if (name === 'Amount') return `Rs. ${v.toLocaleString()}`;
-              return v;
-            }} />} />
+            <Tooltip 
+              content={<ChartTooltip formatter={(v, name) => {
+                if (name.includes('Units')) return `${v.toLocaleString()} ${data.unitLabel}`;
+                if (name.includes('Amount')) return `Rs. ${v.toLocaleString()}`;
+                if (name === 'Rate') return `Rs. ${v.toFixed(2)} / unit`;
+                return v;
+              }} />} 
+              cursor={{ stroke: COLORS.textDim, strokeDasharray: '3 3' }}
+            />
 
-            {/* Seasonal highlight bands */}
             {seasonalBands.map((band, i) => (
               <ReferenceArea
                 key={i}
@@ -191,34 +197,41 @@ export function ConsumptionTrendChart({ data }) {
               />
             ))}
 
-            {/* Current month reference line */}
             {currentMonthIndex >= 0 && (
               <ReferenceLine
                 x={chartData[currentMonthIndex]?.month}
                 stroke={COLORS.textDim}
                 strokeDasharray="4 4"
                 yAxisId="units"
-                label={{ value: 'Current', position: 'top', fill: COLORS.textDim, fontSize: 10, fontFamily: 'JetBrains Mono, monospace' }}
+                label={{ value: 'Current', position: 'top', fill: COLORS.textDim, fontSize: 10 }}
               />
             )}
 
-            {/* Units Area */}
+            {/* Hidden line for Rate in Tooltip */}
+            <Line
+              yAxisId="amount"
+              type="monotone"
+              dataKey="costPerUnit"
+              name="Rate"
+              stroke="transparent"
+              dot={false}
+              activeDot={false}
+              legendType="none"
+              tooltipType="responsive"
+            />
+
+            {/* History Area */}
             <Area
               yAxisId="units"
               type="monotone"
-              dataKey="units"
+              dataKey="displayUnits"
               name="Units"
               stroke={COLORS.blue}
               strokeWidth={2}
               fill="url(#unitsGradient)"
               dot={props => {
                 const { cx, cy, payload } = props;
-                if (payload.isCurrent) {
-                  return <circle cx={cx} cy={cy} r={5} fill={COLORS.blue} stroke="#fff" strokeWidth={2} />;
-                }
-                if (payload.isProjection) {
-                  return <circle cx={cx} cy={cy} r={4} fill={COLORS.green} stroke="#fff" strokeWidth={2} strokeDasharray="2 2" />;
-                }
+                if (payload.isCurrent) return <circle cx={cx} cy={cy} r={5} fill={COLORS.blue} stroke="#fff" strokeWidth={2} />;
                 return <circle cx={cx} cy={cy} r={3} fill={COLORS.blue} stroke="none" opacity={0.6} />;
               }}
               activeDot={{ r: 6, fill: COLORS.blue, stroke: '#fff', strokeWidth: 2 }}
@@ -228,7 +241,7 @@ export function ConsumptionTrendChart({ data }) {
             <Line
               yAxisId="amount"
               type="monotone"
-              dataKey="amount"
+              dataKey="displayAmount"
               name="Amount"
               stroke={COLORS.textMain}
               strokeWidth={2}
@@ -236,30 +249,39 @@ export function ConsumptionTrendChart({ data }) {
               activeDot={{ r: 5, fill: COLORS.textMain, stroke: '#fff', strokeWidth: 2 }}
             />
 
-            {/* Projection dashed line connecting current to future */}
+            {/* Projection Lines */}
             {hasProjection && (
               <Line
                 yAxisId="units"
                 type="monotone"
-                dataKey="units"
+                dataKey="projectionUnits"
+                name="Projected Units"
                 stroke={COLORS.green}
                 strokeWidth={2}
                 strokeDasharray="6 4"
+                dot={props => {
+                  const { cx, cy, payload } = props;
+                  if (payload.isProjection) return <circle cx={cx} cy={cy} r={4} fill={COLORS.green} stroke="#fff" strokeWidth={2} />;
+                  return null;
+                }}
+              />
+            )}
+            {hasProjection && (
+              <Line
+                yAxisId="amount"
+                type="monotone"
+                dataKey="projectionAmount"
+                name="Projected Amount"
+                stroke={COLORS.textDim}
+                strokeWidth={2}
+                strokeDasharray="6 4"
                 dot={false}
-                connectNulls={false}
-                data={chartData.filter(d => d.isProjection || d.isCurrent)}
               />
             )}
           </ComposedChart>
         </ResponsiveContainer>
 
         <div className="chart-footer">
-          {seasonalBands.length > 0 && (
-            <div className="chart-legend-item">
-              <span className="chart-legend-swatch" style={{ background: COLORS.amber, opacity: 0.3 }} />
-              <span>Summer peak period</span>
-            </div>
-          )}
           <div className="chart-legend-item">
             <span className="chart-legend-swatch" style={{ background: COLORS.blue }} />
             <span>Units consumed</span>
@@ -270,8 +292,8 @@ export function ConsumptionTrendChart({ data }) {
           </div>
           {hasProjection && (
             <div className="chart-legend-item">
-              <span className="chart-legend-swatch" style={{ background: COLORS.green }} />
-              <span>Projected savings</span>
+              <span className="chart-legend-swatch" style={{ border: `1px dashed ${COLORS.green}`, background: 'transparent' }} />
+              <span>Solar projection</span>
             </div>
           )}
         </div>
@@ -355,7 +377,7 @@ export function ChargeBreakdownChart({ charges }) {
                     />
                   ))}
                 </Pie>
-                <Tooltip content={<ChartTooltip formatter={(v) => `Rs. ${v.toLocaleString()}`} />} />
+                <Tooltip allowEscapeViewBox={{ x: true, y: true }} content={<ChartTooltip formatter={(v) => `Rs. ${v.toLocaleString()}`} />} />
               </PieChart>
             </ResponsiveContainer>
             <div className="donut-center">
@@ -411,7 +433,7 @@ export function BillComparisonChart({ recentBills, unitLabel }) {
     if (!recentBills?.length) return [];
     return [...recentBills].map(b => ({
       ...b,
-      costPerUnit: b.costPerUnit || (b.units > 0 ? Math.round((b.amount / b.units) * 100) / 100 : 0)
+      costPerUnit: b.costPerUnit || (b.units !== 0 ? Math.round(Math.abs(b.amount / b.units) * 100) / 100 : 0)
     }));
   }, [recentBills]);
 
@@ -432,7 +454,7 @@ export function BillComparisonChart({ recentBills, unitLabel }) {
       <h3 className="section-title">📊 Bill Comparison</h3>
       <div className="chart-card">
         <ResponsiveContainer width="100%" height={300}>
-          <ComposedChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+          <ComposedChart data={data} margin={{ top: 20, right: 30, left: 10, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={COLORS.border} vertical={false} />
             <XAxis
               dataKey="month"
@@ -660,8 +682,18 @@ export function BillingCalendar({ data }) {
   const history = data.consumptionHistory || [];
   if (!history.length) return null;
 
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const currentMonth = data.billingMonth;
+
+  // Group by year
+  const groupedByYear = useMemo(() => {
+    const groups = {};
+    history.forEach(entry => {
+      const year = entry.month.split(' ')[1] || 'Unknown';
+      if (!groups[year]) groups[year] = [];
+      groups[year].push(entry);
+    });
+    return Object.entries(groups).sort((a, b) => a[0].localeCompare(b[0]));
+  }, [history]);
 
   // Determine min/max for color scaling
   const allUnits = history.map(h => h.units);
@@ -687,52 +719,49 @@ export function BillingCalendar({ data }) {
     return COLORS.red;
   };
 
-  // Get the year range from history
-  const years = [...new Set(history.map(h => h.month.split(' ')[1]))].sort();
-  const displayYear = years.length === 1 ? years[0] : `${years[0]}–${years[years.length - 1]}`;
-
   return (
     <div className="section">
       <h3 className="section-title">📅 Monthly Usage Calendar</h3>
       <div className="chart-card calendar-card">
         <div className="calendar-header">
-          <div className="calendar-year">{displayYear}</div>
           <div className="calendar-subtitle">
             {history.length} months of billing history • Avg {avgUnits.toLocaleString()} {data.unitLabel}
           </div>
         </div>
 
-        <div className="calendar-grid">
-          {months.map((mon) => {
-            // Try to find data for this month across any year
-            const entry = history.find(h => h.month.startsWith(mon));
-            const isCurrent = currentMonth?.startsWith(mon);
-            const units = entry?.units;
-            const amount = entry?.amount;
+        <div className="calendar-years-stack">
+          {groupedByYear.map(([year, months]) => (
+            <div key={year} className="calendar-year-group">
+              <div className="calendar-year-label">{year}</div>
+              <div className="calendar-grid">
+                {months.map((entry, idx) => {
+                  const mon = entry.month.split(' ')[0];
+                  const isCurrent = entry.month === currentMonth;
+                  const units = entry.units;
+                  const amount = entry.amount;
+                  const rate = units !== 0 ? Math.abs(amount / units).toFixed(2) : '0';
 
-            return (
-              <div
-                key={mon}
-                className={`calendar-cell ${entry ? 'has-data' : ''} ${isCurrent ? 'current' : ''}`}
-                style={entry ? { background: getCellColor(units) } : {}}
-                title={entry ? `${entry.month}: ${units?.toLocaleString()} ${data.unitLabel} • Rs. ${amount?.toLocaleString()}` : ''}
-              >
-                <span className="calendar-cell-month">{mon}</span>
-                {entry && (
-                  <>
-                    <span className="calendar-cell-units" style={{ color: getTextColor(units) }}>
-                      {units.toLocaleString()}
-                    </span>
-                    <span className="calendar-cell-amount">
-                      Rs. {(amount / 1000).toFixed(1)}k
-                    </span>
-                  </>
-                )}
-                {!entry && <span className="calendar-cell-empty">—</span>}
-                {isCurrent && <div className="calendar-current-badge">CURRENT</div>}
+                  return (
+                    <div
+                      key={idx}
+                      className={`calendar-cell has-data ${isCurrent ? 'current' : ''}`}
+                      style={{ background: getCellColor(units) }}
+                      title={`${entry.month}\nUsage: ${units?.toLocaleString()} ${data.unitLabel}\nAmount: Rs. ${amount?.toLocaleString()}\nRate: Rs. ${rate}/unit`}
+                    >
+                      <span className="calendar-cell-month">{mon}</span>
+                      <span className="calendar-cell-units" style={{ color: getTextColor(units) }}>
+                        {units?.toLocaleString()}
+                      </span>
+                      <span className="calendar-cell-amount">
+                        Rs. {amount ? (amount / 1000).toFixed(1) : 0}k
+                      </span>
+                      {isCurrent && <div className="calendar-current-badge">NOW</div>}
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })}
+            </div>
+          ))}
         </div>
 
         <div className="calendar-footer">

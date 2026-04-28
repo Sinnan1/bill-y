@@ -7,5 +7,23 @@
     "icon": "🏛️",
     "description": "Consumer rights, billing rules, complaint procedures, and disconnection policies for all Pakistani DISCOs.",
     "embeddingsFile": "/embeddings/nepra-csm-2025.json"
+  },
+  {
+    "id": "netmetering-guidelines",
+    "name": "Net Metering Guidelines for Consumers",
+    "category": "guide",
+    "authoritative": false,
+    "icon": "📘",
+    "description": "Auto-generated entry",
+    "embeddingsFile": "/embeddings/netmetering-guidelines.json"
+  },
+  {
+    "id": "nepra-prosumer-regs",
+    "name": "NEPRA Prosumer Regulations (SRO 251 2026)",
+    "category": "government",
+    "authoritative": true,
+    "icon": "🏛️",
+    "description": "Auto-generated entry",
+    "embeddingsFile": "/embeddings/nepra-prosumer-regs.json"
   }
 ]

@@ -6,6 +6,7 @@
 
 import express from 'express';
 import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
@@ -16,7 +17,17 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT || 8080;
 
+// ─── Rate Limiting ───
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again after 15 minutes.' }
+});
+
 // ─── Middleware ───
+app.use(limiter);
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
@@ -45,6 +56,7 @@ RULES:
 
 Return ONLY valid JSON with this exact structure:
 {
+  "confidenceScore": number (0-100 based on how clearly you can read the bill values),
   "billType": "LESCO Electricity Bill" | "SNGPL Gas Bill" | "KWSB Water Bill" | "WASA Water Bill" | "Unknown",
   "billingMonth": "Month Year",
   "totalAmount": number,
@@ -52,10 +64,19 @@ Return ONLY valid JSON with this exact structure:
   "isPastDue": boolean,
   "unitsConsumed": number,
   "unitLabel": "kWh" | "MMBTU" | "gallons",
+  "costPerUnit": number or null,
   "previousBillAmount": number or null,
   "comparisonText": "Rs. X more/less than last month" or null,
   "isNetMetering": boolean,
   "netMetering": {
+    "importOffPeak": number or null,
+    "importPeak": number or null,
+    "exportOffPeak": number or null,
+    "exportPeak": number or null,
+    "netOffPeak": number or null,
+    "netPeak": number or null,
+    "gopTariffOffPeak": number or null,
+    "gopTariffPeak": number or null,
     "unitsExported": number,
     "unitsImported": number,
     "netPosition": number,
@@ -119,7 +140,7 @@ Return ONLY valid JSON with this exact structure:
 IMPORTANT RULES (ANTI-HALLUCINATION STRICT MODE):
 - Read EVERY line item — do not skip any charge.
 - For LESCO: look for Cost of Electricity, Fuel Price Adjustment, FC Surcharge, QTA, Fixed Charges, GST, ED, TV Fee, LP Surcharge, etc.
-- For net metering: look for Import/Export readings, MDI, DG-Capacity, credit details.
+- For net metering: Look PRECISELY at the "BILL CALCULATION" section. Extract exact numbers for "IMPORT (KWH)", "EXPORT (KWH)", and "NET (KWH)", paying close attention to the "OFF-PEAK" and "PEAK" columns. Also note the "GOP TARIFF" rates (e.g., 34.530).
 - All amounts in Pakistani Rupees.
 - STRICT RULE: NEVER invent, hallucinate, or estimate numbers, dates, or charges. If a value is not clearly printed on the bill, return null or omit it. Do NOT guess or extrapolate.
 - changeReasons: List 1-3 reasons ONLY if there is actual evidence of change (e.g., new taxes, obvious seasonal jumps). If no obvious reason, return an empty array [].
@@ -128,7 +149,7 @@ IMPORTANT RULES (ANTI-HALLUCINATION STRICT MODE):
 - CRITICAL: Extract the 12-month consumption history table ONLY if present.
 - Extract "previous bills" or "bill comparison" section ONLY if present.
 - Extract bill issue date ONLY if printed.
-- Do NOT calculate costPerUnit, estimatedSavings, or projections — raw values only.`;
+- Do NOT calculate estimatedSavings or projections — raw values only. Do not calculate costPerUnit yourself, only extract it if printed.`;
 
 const CHAT_PROMPT_PREFIX = `You are Bill-y, a Pakistani utility bill expert. The user has uploaded a bill and you analyzed it. Here is the analysis data:\n\n`;
 const CHAT_PROMPT_SUFFIX = `\n\nAnswer the user's question based on this specific bill data. Be conversational, specific with numbers, and helpful. If the question is about something not in the bill, say so honestly. Keep answers concise but thorough. Answer in English.`;
@@ -144,6 +165,7 @@ Compare them and return ONLY valid JSON with this exact structure:
     "totalAmount": number,
     "unitsConsumed": number,
     "unitLabel": "kWh" | "MMBTU",
+    "costPerUnit": number or null,
     "dueDate": "DD Mon YYYY" or null,
     "isPastDue": boolean,
     "billType": "LESCO Electricity Bill" | "SNGPL Gas Bill" | "WASA Water Bill" | "Unknown",
@@ -156,6 +178,7 @@ Compare them and return ONLY valid JSON with this exact structure:
     "totalAmount": number,
     "unitsConsumed": number,
     "unitLabel": "kWh" | "MMBTU",
+    "costPerUnit": number or null,
     "dueDate": "DD Mon YYYY" or null,
     "isPastDue": boolean,
     "billType": "LESCO Electricity Bill" | "SNGPL Gas Bill" | "WASA Water Bill" | "Unknown",
@@ -311,7 +334,7 @@ function addDerivedData(data) {
   if (data.recentBills) {
     data.recentBills = data.recentBills.map(b => ({
       ...b,
-      costPerUnit: b.costPerUnit || (b.units > 0 ? Math.round((b.amount / b.units) * 100) / 100 : 0)
+      costPerUnit: b.costPerUnit || (b.units !== 0 ? Math.round((Math.abs(b.amount) / Math.abs(b.units)) * 100) / 100 : 0)
     }));
   }
 

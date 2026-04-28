@@ -11,32 +11,32 @@ import {
   BillingCalendar
 } from './Charts';
 import KnowledgeBase from './KnowledgeBase';
-import DEMO_BILL from './demoData';
+import { DEMO_BILL_A, DEMO_BILL_B, DEMO_COMPARE_DATA } from './demoData';
 
 /* ═══════ SVG Icons ═══════ */
 const UploadIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
   </svg>
 );
 const SendIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+    <line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" />
   </svg>
 );
 const DownloadIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
   </svg>
 );
 const RefreshIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/>
+    <polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" />
   </svg>
 );
 const XIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
   </svg>
 );
 const AlertIcon = () => (
@@ -50,6 +50,11 @@ const ZapIcon = () => (
 );
 const CheckIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+);
+const TriangleIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" fill="currentColor" fillOpacity="0.2" />
+  </svg>
 );
 
 /* ═══════ Loading Messages ═══════ */
@@ -72,14 +77,14 @@ function AnimatedNumber({ target }) {
       const progress = Math.min((timestamp - startTimestamp) / duration, 1);
       const ease = 1 - Math.pow(1 - progress, 4); // easeOutQuart
       setNum(Math.floor(ease * target));
-      
+
       if (progress < 1) {
         window.requestAnimationFrame(step);
       } else {
         setNum(target);
       }
     };
-    
+
     const rafId = window.requestAnimationFrame(step);
     return () => window.cancelAnimationFrame(rafId);
   }, [target]);
@@ -95,48 +100,48 @@ function SummaryCard({ data }) {
     <div className="summary-card">
       <div className="summary-row">
         <div className="summary-left">
-            <span className="bill-type-badge">{data.billType}</span>
-            <div className="summary-amount">
-              <small>Rs. </small>{(data.totalAmount || 0).toLocaleString()}
-            </div>
-            {data.comparisonText && (
-              <span className="summary-change-tag">{data.comparisonText}</span>
-            )}
-            
-            {/* Visual Comparison Chart */}
-            {data.previousBillAmount > 0 && (
-              <div className="cost-comparison-chart">
-                <div className="chart-row">
-                  <span className="chart-label">Last Month</span>
-                  <div className="chart-bar-wrap">
-                    <div className="chart-bar prev-bar" style={{ width: `${Math.max(10, (data.previousBillAmount / Math.max(data.previousBillAmount, data.totalAmount)) * 100)}%` }}></div>
-                  </div>
-                  <span className="chart-val">Rs. {data.previousBillAmount.toLocaleString()}</span>
+          <span className="bill-type-badge">{data.billType}</span>
+          <div className="summary-amount">
+            <small>Rs. </small>{(data.totalAmount || 0).toLocaleString()}
+          </div>
+          {data.comparisonText && (
+            <span className="summary-change-tag">{data.comparisonText}</span>
+          )}
+
+          {/* Visual Comparison Chart */}
+          {data.previousBillAmount > 0 && (
+            <div className="cost-comparison-chart">
+              <div className="chart-row">
+                <span className="chart-label">Last Month</span>
+                <div className="chart-bar-wrap">
+                  <div className="chart-bar prev-bar" style={{ width: `${Math.max(10, (data.previousBillAmount / Math.max(data.previousBillAmount, data.totalAmount)) * 100)}%` }}></div>
                 </div>
-                <div className="chart-row">
-                  <span className="chart-label">This Month</span>
-                  <div className="chart-bar-wrap">
-                    <div className={`chart-bar curr-bar ${hasIncrease ? 'danger' : 'success'}`} style={{ width: `${Math.max(10, (data.totalAmount / Math.max(data.previousBillAmount, data.totalAmount)) * 100)}%` }}></div>
-                  </div>
-                  <span className="chart-val">Rs. {data.totalAmount.toLocaleString()}</span>
-                </div>
+                <span className="chart-val">Rs. {data.previousBillAmount.toLocaleString()}</span>
               </div>
-            )}
-            
-          </div>
-          <div className="summary-right">
-            <div className="meta-item"><span className="meta-label">Due</span><span className={`meta-value ${data.isPastDue ? 'danger' : ''}`}>{data.dueDate}{data.isPastDue ? ' ⚠️' : ''}</span></div>
-            <div className="meta-item"><span className="meta-label">Units</span><span className="meta-value">{data.unitsConsumed} {data.unitLabel || ''}</span></div>
-            <div className="meta-item"><span className="meta-label">Period</span><span className="meta-value">{data.billingMonth}</span></div>
-          </div>
+              <div className="chart-row">
+                <span className="chart-label">This Month</span>
+                <div className="chart-bar-wrap">
+                  <div className={`chart-bar curr-bar ${hasIncrease ? 'danger' : 'success'}`} style={{ width: `${Math.max(10, (data.totalAmount / Math.max(data.previousBillAmount, data.totalAmount)) * 100)}%` }}></div>
+                </div>
+                <span className="chart-val">Rs. {data.totalAmount.toLocaleString()}</span>
+              </div>
+            </div>
+          )}
+
         </div>
-        {topReason && (
-          <div className="summary-insight">
-            <span className="insight-icon">{topReason.icon}</span>
-            <div><strong>{topReason.title}</strong> — {topReason.explanation}</div>
-          </div>
-        )}
+        <div className="summary-right">
+          <div className="meta-item"><span className="meta-label">Due</span><span className={`meta-value ${data.isPastDue ? 'danger' : ''}`}>{data.dueDate}{data.isPastDue ? ' ⚠️' : ''}</span></div>
+          <div className="meta-item"><span className="meta-label">Units</span><span className="meta-value">{data.unitsConsumed} {data.unitLabel || ''}</span></div>
+          <div className="meta-item"><span className="meta-label">Period</span><span className="meta-value">{data.billingMonth}</span></div>
+        </div>
       </div>
+      {topReason && (
+        <div className="summary-insight">
+          <span className="insight-icon">{topReason.icon}</span>
+          <div><strong>{topReason.title}</strong> — {topReason.explanation}</div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -144,24 +149,24 @@ function SummaryCard({ data }) {
 function BillHealthScore({ data }) {
   // Calculate score 0-100
   let score = 100;
-  
+
   if (data.isPastDue) score -= 15;
-  
+
   const hasIncrease = data.totalAmount > data.previousBillAmount;
   if (hasIncrease && data.previousBillAmount > 0) {
     const pctInc = ((data.totalAmount - data.previousBillAmount) / data.previousBillAmount) * 100;
     score -= Math.min(20, Math.round(pctInc / 2));
   }
-  
+
   if (data.unitsConsumed > 300) {
     score -= Math.min(20, Math.round((data.unitsConsumed - 300) / 10));
   }
-  
+
   const warnings = data.charges?.filter(c => c.status === 'WARNING' || c.status === 'OVERDUE') || [];
   score -= (warnings.length * 10);
-  
+
   score = Math.max(0, Math.min(100, score));
-  
+
   // Grade
   let grade = 'A';
   let color = 'var(--green)'; // green
@@ -212,24 +217,33 @@ function SolarCard({ nm, insights }) {
   const insightStyle = { warning: 'solar-insight-warn', tip: 'solar-insight-tip', info: 'solar-insight-info' };
   const insightIcon = { warning: '⚠️', tip: '💡', info: 'ℹ️' };
 
+  // Robust value formatter
+  const val = (v, isRate = false) => {
+    if (v === undefined || v === null || v === "") return '—';
+    const num = Number(v);
+    if (isNaN(num)) return v;
+    if (isRate) return num.toFixed(3);
+    return num.toLocaleString();
+  };
+
   // Calculate energy flow ratio
   const totalFlow = (nm.unitsExported || 0) + (nm.unitsImported || 0);
   const exportPct = totalFlow > 0 ? Math.round(((nm.unitsExported || 0) / totalFlow) * 100) : 50;
-  
+
   // Quarter settlement progress
   const qMonth = nm.monthInQuarter || 1;
 
   return (
     <div className="section">
-      <h3 className="section-title">🌞 Your Solar Performance</h3>
+      <h3 className="section-title">🌞 Your Solar Performance Metrics</h3>
       <div className="solar-card">
-        
+
         {/* Visual Energy Flow Bar */}
         {totalFlow > 0 && (
           <div className="viz-container">
             <div className="viz-header">
-              <span style={{color: 'var(--green)'}}>Exported ({exportPct}%)</span>
-              <span style={{color: 'var(--red)'}}>Imported ({100 - exportPct}%)</span>
+              <span style={{ color: 'var(--green)' }}>Exported ({exportPct}%)</span>
+              <span style={{ color: 'var(--red)' }}>Imported ({100 - exportPct}%)</span>
             </div>
             <div className="energy-bar">
               <div className="energy-bar-export" style={{ width: `${exportPct}%` }}></div>
@@ -256,6 +270,46 @@ function SolarCard({ nm, insights }) {
               <div className="timeline-line"></div>
               <div className={`timeline-step ${qMonth === 3 ? 'active' : ''} ${qMonth === 3 ? 'settlement' : ''}`}><span>3</span><small>Settlement</small></div>
             </div>
+          </div>
+        )}
+
+        {/* Detailed Readings Table */}
+        {(nm.importOffPeak !== undefined || nm.importPeak !== undefined) && (
+          <div className="solar-tariff-section">
+            <h4 className="viz-title">Detailed Reading Breakdown</h4>
+            <table className="solar-tariff-table">
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Off-Peak</th>
+                  <th>Peak</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="row-label">Import (kWh)</td>
+                  <td className="val-offpeak">{val(nm.importOffPeak)}</td>
+                  <td className="val-peak">{val(nm.importPeak)}</td>
+                </tr>
+                <tr>
+                  <td className="row-label">Export (kWh)</td>
+                  <td className="val-offpeak">{val(nm.exportOffPeak)}</td>
+                  <td className="val-peak">{val(nm.exportPeak)}</td>
+                </tr>
+                <tr>
+                  <td className="row-label">Net (kWh)</td>
+                  <td className="val-offpeak">{val(nm.netOffPeak)}</td>
+                  <td className="val-peak">{val(nm.netPeak)}</td>
+                </tr>
+                {(nm.gopTariffOffPeak !== undefined || nm.gopTariffPeak !== undefined) && (
+                  <tr>
+                    <td className="row-label">GOP Tariff (Rs)</td>
+                    <td className="val-rate">{val(nm.gopTariffOffPeak, true)}</td>
+                    <td className="val-rate">{val(nm.gopTariffPeak, true)}</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         )}
 
@@ -590,6 +644,36 @@ function ComparisonDashboard({ data, onReset }) {
             </div>
           )}
 
+          {/* Cost per unit comparison */}
+          {((billA?.totalAmount > 0 && billA?.unitsConsumed > 0) || (billB?.totalAmount > 0 && billB?.unitsConsumed > 0)) && (
+            <div className="cmp-amount-bar-section">
+              <h4 className="cmp-section-label">Cost per Unit</h4>
+              <div className="cmp-amount-bars">
+                {[{ bill: billA, label: 'Bill A' }, { bill: billB, label: 'Bill B' }].map(({ bill, label }) => {
+                  const getCpu = (b) => {
+                    if (b?.netMetering?.gopTariffOffPeak) return b.netMetering.gopTariffOffPeak;
+                    if (b?.costPerUnit) return b.costPerUnit;
+                    return (b?.unitsConsumed > 0 ? b.totalAmount / b.unitsConsumed : 0);
+                  };
+                  const cpuA = getCpu(billA);
+                  const cpuB = getCpu(billB);
+                  const cpu = getCpu(bill);
+                  const maxCpu = Math.max(cpuA, cpuB, 1);
+                  const pct = Math.max(6, Math.round((cpu / maxCpu) * 100));
+                  return (
+                    <div key={label} className="cmp-bar-row">
+                      <span className="cmp-bar-label">{label} · {bill?.month}</span>
+                      <div className="cmp-bar-track">
+                        <div className="cmp-bar-fill" style={{ width: `${pct}%`, background: 'var(--amber)' }} />
+                      </div>
+                      <span className="cmp-bar-val">Rs. {cpu.toFixed(2)} / {bill?.unitLabel || 'kWh'}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Solar side-by-side meters */}
           {(billA?.isNetMetering || billB?.isNetMetering) && (
             <div className="cmp-solar-meters">
@@ -810,13 +894,7 @@ export default function App() {
   const [compareData, setCompareData] = useState(null);
   const fileInput2Ref = useRef(null);
 
-  // -- Demo Mode --
-  const loadDemo = useCallback(() => {
-    setCompareMode(false);
-    setIsDemo(true);
-    setFile({ name: 'lesco-net-metering-bill.jpg', size: 145820, type: 'image/jpeg' });
-    setPreview('/demo-bill.jpg');
-  }, []);
+  // -- Demo Mode interceptors will use isDemo flag directly --
 
   // Loading message rotation
   useEffect(() => {
@@ -841,7 +919,7 @@ export default function App() {
     if (f.size > 10 * 1024 * 1024) { setError('File must be under 10MB.'); return; }
     setError(null);
     setIsDemo(false);
-    
+
     if (target === 'file1') {
       setFile(f);
       if (f.type.startsWith('image/')) {
@@ -874,10 +952,10 @@ export default function App() {
 
     if (isDemo) {
       setTimeout(() => {
-        setBillData(DEMO_BILL);
+        setBillData(JSON.parse(JSON.stringify(DEMO_BILL_A)));
         setScreen('dashboard');
         setActiveTab('overview');
-      }, 3500);
+      }, 1500);
       return;
     }
 
@@ -902,6 +980,15 @@ export default function App() {
     setError(null);
     setScreen('loading');
     setLoadingMsg(0);
+
+    if (isDemo) {
+      setTimeout(() => {
+        setCompareData(DEMO_COMPARE_DATA);
+        setScreen('comparison');
+      }, 1500);
+      return;
+    }
+
     try {
       const data = await compareBills(file, file2);
       setCompareData(data);
@@ -931,11 +1018,9 @@ export default function App() {
       {/* Header */}
       <header className="header">
         <div className="container header-inner">
-          <div className="logo" onClick={reset} style={{ cursor: 'pointer' }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" style={{ marginRight: '4px' }}>
-              <path d="M12 2L2 22h20L12 2zm0 6l5.5 11h-11L12 8z"/>
-            </svg>
-            Bill-y
+          <div className="logo" onClick={reset}>
+            <img src="/logo.webp" alt="Bill-y Logo" className="logo-img" />
+            <span className="logo-text">Bill-y</span>
           </div>
           <nav className="header-nav">
             <a href="#features" onClick={(e) => { e.preventDefault(); document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' }); }}>Features</a>
@@ -943,8 +1028,18 @@ export default function App() {
             <a href="#docs" onClick={(e) => { e.preventDefault(); setScreen('official-docs'); }}>Knowledge Base</a>
           </nav>
           <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <button 
-              className="theme-toggle" 
+            <div
+              className={`demo-switch-container ${isDemo ? 'active' : ''}`}
+              onClick={() => setIsDemo(!isDemo)}
+              title="Toggle Global Demo Mode"
+            >
+              <span className="demo-label">Demo Mode</span>
+              <div className="demo-switch">
+                <div className="demo-switch-handle"></div>
+              </div>
+            </div>
+            <button
+              className="theme-toggle"
               onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')}
               aria-label="Toggle dark mode"
               title="Toggle dark mode"
@@ -956,7 +1051,14 @@ export default function App() {
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
               )}
             </button>
-            <button className="btn-primary" style={{ padding: '8px 16px', fontSize: '0.85rem' }} onClick={() => fileInputRef.current?.click()}>
+            <button className="btn-primary" style={{ padding: '8px 16px', fontSize: '0.85rem' }} onClick={() => {
+              if (isDemo) {
+                setFile({ name: 'demo-bill-A.jpg', size: 145820, type: 'image/jpeg' });
+                setPreview('/demo-bill.jpg');
+              } else {
+                fileInputRef.current?.click();
+              }
+            }}>
               Scan a bill
             </button>
           </div>
@@ -968,251 +1070,279 @@ export default function App() {
         <main className="landing">
           {!file ? (
             <>
-            <div className="hero-container">
-              <div className="hero-content">
-                <div className="hero-badge animate-on-scroll fade-up">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                    <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-                  </svg>
-                  Stop overpaying for utilities.
-                </div>
+              <div className="hero-container">
+                <div className="hero-content">
+                  <div className="hero-badge animate-on-scroll fade-up">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                      <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
+                    Stop overpaying for utilities.
+                  </div>
 
-                <h1 className="hero-title animate-on-scroll fade-up delay-100">
-                  Decode your bill.<br/>Lower your costs.
-                </h1>
-                
-                <p className="hero-subtitle animate-on-scroll fade-up delay-200">
-                  Upload your LESCO, SNGPL, or WASA bill. We'll explain the hidden charges, verify your tariff, and find ways to save.
-                </p>
-                
-                <div className="hero-actions animate-on-scroll fade-up delay-300">
-                  <button className="btn-primary" onClick={() => {
-                    setCompareMode(false);
-                    fileInputRef.current?.click();
-                  }}>
-                    Scan your bill
-                  </button>
-                  <button className="btn-demo" onClick={loadDemo}>
-                    ▶ Try Demo
-                  </button>
-                  <button className={`btn-secondary ${compareMode ? 'active' : ''}`} onClick={() => setCompareMode(true)}>
-                    Compare two bills
-                  </button>
-                  <button className="btn-nepra" onClick={() => setScreen('official-docs')}>
-                    Search knowledge base
-                  </button>
-                </div>
+                  <h1 className="hero-title animate-on-scroll fade-up delay-100">
+                    Decode your bill.<br />Lower your costs.
+                  </h1>
 
-                <div className="hero-meta animate-on-scroll fade-up delay-400">
-                  No signup required • Takes 5 seconds • 100% free
-                </div>
+                  <p className="hero-subtitle animate-on-scroll fade-up delay-200">
+                    Upload your LESCO, SNGPL, or WASA bill. We'll explain the hidden charges, verify your tariff, and find ways to save.
+                  </p>
 
-                <div className="trusted-by animate-on-scroll fade-up delay-500">
-                  <span className="trusted-title">Supports all major Pakistani utility providers</span>
-                  <div className="trusted-logos">
-                    <span className="t-logo">LESCO <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-                    <span className="t-logo">SNGPL <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
-                    <span className="t-logo">WASA <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>
+                  <div className="hero-actions animate-on-scroll fade-up delay-300">
+                    <button className="btn-primary" onClick={() => {
+                      setCompareMode(false);
+                      if (isDemo) {
+                        setFile({ name: 'demo-bill-A.jpg', size: 145820, type: 'image/jpeg' });
+                        setPreview('/demo-bill.jpg');
+                      } else {
+                        fileInputRef.current?.click();
+                      }
+                    }}>
+                      Scan your bill
+                    </button>
+                    <button className={`btn-secondary ${compareMode ? 'active' : ''}`} onClick={() => {
+                      setCompareMode(true);
+                      if (isDemo) {
+                        setFile({ name: 'demo-bill-A.jpg', size: 145820, type: 'image/jpeg' });
+                        setPreview('/demo-bill.jpg');
+                        setFile2({ name: 'demo-bill-B.jpg', size: 182400, type: 'image/jpeg' });
+                        setPreview2('/demo-bill.jpg');
+                      }
+                    }}>
+                      Compare two bills
+                    </button>
+                    <button className="btn-nepra" onClick={() => setScreen('official-docs')}>
+                      Search knowledge base
+                    </button>
+                  </div>
+
+                  <div className="hero-meta animate-on-scroll fade-up delay-400">
+                    No signup required • Takes 5 seconds • 100% free
+                  </div>
+
+                  <div className="trusted-by animate-on-scroll fade-up delay-500">
+                    <span className="trusted-title">Supports all major Pakistani utility providers</span>
+                    <div className="trusted-logos">
+                      <span className="t-logo">LESCO <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg></span>
+                      <span className="t-logo">SNGPL <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg></span>
+                      <span className="t-logo">WASA <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg></span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="hero-visual animate-on-scroll fade-left delay-200">
-                {compareMode ? (
-                  <div className="compare-upload-grid">
-                    <div 
-                      className={`upload-box ${dragOver ? 'drag-over' : ''}`}
-                      onDragOver={e => { e.preventDefault(); setDragOver(true); }}
-                      onDragLeave={() => setDragOver(false)}
-                      onDrop={e => handleDrop(e, 'file1')}
-                      onClick={() => !file && fileInputRef.current?.click()}
-                    >
-                      {preview ? <img src={preview} alt="Bill 1" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}><span style={{ fontSize: '2rem', display: 'block', marginBottom: '8px' }}>1</span>First bill (Baseline)</div>}
-                    </div>
-                    <div 
-                      className={`upload-box ${dragOver2 ? 'drag-over' : ''}`}
-                      onDragOver={e => { e.preventDefault(); setDragOver2(true); }}
-                      onDragLeave={() => setDragOver2(false)}
-                      onDrop={e => handleDrop(e, 'file2')}
-                      onClick={() => !file2 && fileInput2Ref.current?.click()}
-                    >
-                      {preview2 ? <img src={preview2} alt="Bill 2" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}><span style={{ fontSize: '2rem', display: 'block', marginBottom: '8px' }}>2</span>Second bill (Current)</div>}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="hero-diagram">
-                    {/* Left Documents Stack */}
-                    <div className="hero-docs-grid">
-                      <div className="mini-doc">
-                        <div className="mini-doc-lines">
-                          <div className="mini-line" style={{ width: '70%' }}></div>
-                          <div className="mini-line" style={{ width: '50%' }}></div>
-                          <div className="mini-line" style={{ width: '80%' }}></div>
-                        </div>
-                      </div>
-                      <div className="mini-doc" style={{ animationDelay: '0.2s', opacity: 0.7 }}>
-                        <div className="mini-doc-lines">
-                          <div className="mini-line" style={{ width: '60%' }}></div>
-                          <div className="mini-line" style={{ width: '90%' }}></div>
-                          <div className="mini-line" style={{ width: '40%' }}></div>
-                        </div>
-                      </div>
-                      <div className="mini-doc" style={{ animationDelay: '0.4s', opacity: 0.4 }}>
-                        <div className="mini-doc-lines">
-                          <div className="mini-line" style={{ width: '80%' }}></div>
-                          <div className="mini-line" style={{ width: '60%' }}></div>
-                          <div className="mini-line" style={{ width: '70%' }}></div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Connector 1 */}
-                    <div className="diagram-connector">
-                      <svg width="32" height="24" viewBox="0 0 32 24" fill="none">
-                        <path d="M0 12 H 28" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
-                        <polygon points="24,8 32,12 24,16" fill="currentColor" />
-                      </svg>
-                    </div>
-
-                    {/* Center Upload Node */}
-                    <div className="hero-center-wrapper">
-                      <button
-                        className={`abstract-node ${dragOver ? 'drag-over' : ''}`}
+                <div className="hero-visual animate-on-scroll fade-left delay-200">
+                  {compareMode ? (
+                    <div className="compare-upload-grid">
+                      <div
+                        className={`upload-box ${dragOver ? 'drag-over' : ''}`}
                         onDragOver={e => { e.preventDefault(); setDragOver(true); }}
                         onDragLeave={() => setDragOver(false)}
                         onDrop={e => handleDrop(e, 'file1')}
-                        onClick={() => !file && fileInputRef.current?.click()}
-                        aria-label="Upload Bill"
+                        onClick={() => {
+                          if (!file) {
+                            if (isDemo) {
+                              setFile({ name: 'demo-bill-A.jpg', size: 145820, type: 'image/jpeg' });
+                              setPreview('/demo-bill.jpg');
+                            } else {
+                              fileInputRef.current?.click();
+                            }
+                          }
+                        }}
                       >
-                        <div className="node-logo" style={{ fontSize: '32px', fontWeight: '600', fontFamily: 'var(--font-sans)', color: 'var(--text-main)' }}>
-                          Δ
-                        </div>
-                      </button>
-                    </div>
-
-                    {/* Connector 2 */}
-                    <div className="diagram-connector">
-                      <svg width="32" height="24" viewBox="0 0 32 24" fill="none">
-                        <path d="M0 12 H 28" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
-                        <polygon points="24,8 32,12 24,16" fill="currentColor" />
-                      </svg>
-                    </div>
-
-                    {/* Right Value Block (Premium Insights Card) */}
-                    <div className="hero-code-block insight-card">
-                      {/* Warning Header */}
-                      <div className="insight-warning-header">
-                        <AlertIcon />
-                        <span>You are overpaying</span>
+                        {preview ? <img src={preview} alt="Bill 1" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}><span style={{ fontSize: '2rem', display: 'block', marginBottom: '8px' }}>1</span>First bill (Baseline)</div>}
                       </div>
-
-                      <div className="insight-body">
-                        <div className="insight-label">Total Bill</div>
-                        <div className="insight-value">
-                          Rs. <AnimatedNumber target={14500} />
-                        </div>
-                        <div className="insight-diff text-red">
-                          <svg className="pulse-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
-                          Rs. 2,300 higher than usual
-                        </div>
-                        
-                        <div className="insight-item">
-                          <XIcon />
-                          <span>High Fuel Adjustment detected</span>
-                        </div>
-
-                        <div className="insight-action">
-                          <LightbulbIcon />
-                          <span>You can save Rs. 800 next month</span>
-                        </div>
+                      <div
+                        className={`upload-box ${dragOver2 ? 'drag-over' : ''}`}
+                        onDragOver={e => { e.preventDefault(); setDragOver2(true); }}
+                        onDragLeave={() => setDragOver2(false)}
+                        onDrop={e => handleDrop(e, 'file2')}
+                        onClick={() => {
+                          if (!file2) {
+                            if (isDemo) {
+                              setFile2({ name: 'demo-bill-B.jpg', size: 182400, type: 'image/jpeg' });
+                              setPreview2('/demo-bill.jpg');
+                            } else {
+                              fileInput2Ref.current?.click();
+                            }
+                          }
+                        }}
+                      >
+                        {preview2 ? <img src={preview2} alt="Bill 2" style={{ width: '100%', height: '100%', objectFit: 'contain' }} /> : <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}><span style={{ fontSize: '2rem', display: 'block', marginBottom: '8px' }}>2</span>Second bill (Current)</div>}
                       </div>
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    <div className="hero-diagram">
+                      {/* Left Documents Stack */}
+                      <div className="hero-docs-grid">
+                        <div className="mini-doc">
+                          <div className="mini-doc-lines">
+                            <div className="mini-line" style={{ width: '70%' }}></div>
+                            <div className="mini-line" style={{ width: '50%' }}></div>
+                            <div className="mini-line" style={{ width: '80%' }}></div>
+                          </div>
+                        </div>
+                        <div className="mini-doc" style={{ animationDelay: '0.2s', opacity: 0.7 }}>
+                          <div className="mini-doc-lines">
+                            <div className="mini-line" style={{ width: '60%' }}></div>
+                            <div className="mini-line" style={{ width: '90%' }}></div>
+                            <div className="mini-line" style={{ width: '40%' }}></div>
+                          </div>
+                        </div>
+                        <div className="mini-doc" style={{ animationDelay: '0.4s', opacity: 0.4 }}>
+                          <div className="mini-doc-lines">
+                            <div className="mini-line" style={{ width: '80%' }}></div>
+                            <div className="mini-line" style={{ width: '60%' }}></div>
+                            <div className="mini-line" style={{ width: '70%' }}></div>
+                          </div>
+                        </div>
+                      </div>
 
-                {error && <div className="error-banner" style={{ position: 'absolute', bottom: '-80px', width: '100%' }}>{error}</div>}
+                      {/* Connector 1 */}
+                      <div className="diagram-connector">
+                        <svg width="32" height="24" viewBox="0 0 32 24" fill="none">
+                          <path d="M0 12 H 28" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
+                          <polygon points="24,8 32,12 24,16" fill="currentColor" />
+                        </svg>
+                      </div>
+
+                      {/* Center Upload Node */}
+                      <div className="hero-center-wrapper">
+                        <button
+                          className={`abstract-node ${dragOver ? 'drag-over' : ''}`}
+                          onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+                          onDragLeave={() => setDragOver(false)}
+                          onDrop={e => handleDrop(e, 'file1')}
+                          onClick={() => !file && fileInputRef.current?.click()}
+                          aria-label="Upload Bill"
+                        >
+                          <div className="node-logo" style={{ fontSize: '32px', fontWeight: '600', fontFamily: 'var(--font-sans)', color: 'var(--text-main)' }}>
+                            Δ
+                          </div>
+                        </button>
+                      </div>
+
+                      {/* Connector 2 */}
+                      <div className="diagram-connector">
+                        <svg width="32" height="24" viewBox="0 0 32 24" fill="none">
+                          <path d="M0 12 H 28" stroke="currentColor" strokeWidth="2" strokeDasharray="4 4" />
+                          <polygon points="24,8 32,12 24,16" fill="currentColor" />
+                        </svg>
+                      </div>
+
+                      {/* Right Value Block (Premium Insights Card) */}
+                      <div className="hero-code-block insight-card">
+                        {/* Warning Header */}
+                        <div className="insight-warning-header">
+                          <AlertIcon />
+                          <span>You are overpaying</span>
+                        </div>
+
+                        <div className="insight-body">
+                          <div className="insight-label">Total Bill</div>
+                          <div className="insight-value">
+                            Rs. <AnimatedNumber target={14500} />
+                          </div>
+                          <div className="insight-diff text-red">
+                            <svg className="pulse-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
+                            Rs. 2,300 higher than usual
+                          </div>
+
+                          <div className="insight-item">
+                            <XIcon />
+                            <span>High Fuel Adjustment detected</span>
+                          </div>
+
+                          <div className="insight-action">
+                            <LightbulbIcon />
+                            <span>You can save Rs. 800 next month</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {error && <div className="error-banner" style={{ position: 'absolute', bottom: '-80px', width: '100%' }}>{error}</div>}
+                </div>
               </div>
-            </div>
 
-            {/* FEATURE SECTIONS */}
-            <div id="features" className="feature-sections-container">
-              {/* Feature 1 */}
-              <section className="feature-showcase">
-                <div className="feature-showcase-text animate-on-scroll fade-up">
-                  <div className="feature-badge" style={{color: 'var(--blue)', background: 'var(--blue-light)'}}>Clear Breakdown</div>
-                  <h2>See exactly what you're paying for</h2>
-                  <p>Utility bills are filled with jargon. We translate FPA, surcharges, and unit tiers into plain English so you know exactly where your money goes.</p>
-                  <ul className="feature-list">
-                    <li><span style={{color:'var(--green)', display: 'inline-flex', alignItems: 'center'}}><CheckIcon /></span> Automatic tariff verification</li>
-                    <li><span style={{color:'var(--green)', display: 'inline-flex', alignItems: 'center'}}><CheckIcon /></span> Hidden tax identification</li>
-                    <li><span style={{color:'var(--green)', display: 'inline-flex', alignItems: 'center'}}><CheckIcon /></span> Plain English explanations</li>
-                  </ul>
-                </div>
-                <div className="feature-showcase-visual animate-on-scroll fade-left delay-200">
-                  <div className="mockup-card">
-                    <div className="mockup-header">
-                      <span className="mockup-dot"></span>
-                      <span className="mockup-dot"></span>
-                      <span className="mockup-dot"></span>
-                    </div>
-                    <div className="mockup-body">
-                      <div className="mockup-item">
-                        <span className="mockup-icon" style={{color: 'var(--amber)'}}><ZapIcon /></span>
-                        <div className="mockup-text">
-                          <h4>Fuel Price Adjustment</h4>
-                          <p>Rs. 2,450 charged this month due to nationwide fuel costs.</p>
+              {/* FEATURE SECTIONS */}
+              <div id="features" className="feature-sections-container">
+                {/* Feature 1 */}
+                <section className="feature-showcase">
+                  <div className="feature-showcase-text animate-on-scroll fade-up">
+                    <div className="feature-badge" style={{ color: 'var(--blue)', background: 'var(--blue-light)' }}>Clear Breakdown</div>
+                    <h2>See exactly what you're paying for</h2>
+                    <p>Utility bills are filled with jargon. We translate FPA, surcharges, and unit tiers into plain English so you know exactly where your money goes.</p>
+                    <ul className="feature-list">
+                      <li><span style={{ color: 'var(--green)', display: 'inline-flex', alignItems: 'center' }}><CheckIcon /></span> Automatic tariff verification</li>
+                      <li><span style={{ color: 'var(--green)', display: 'inline-flex', alignItems: 'center' }}><CheckIcon /></span> Hidden tax identification</li>
+                      <li><span style={{ color: 'var(--green)', display: 'inline-flex', alignItems: 'center' }}><CheckIcon /></span> Plain English explanations</li>
+                    </ul>
+                  </div>
+                  <div className="feature-showcase-visual animate-on-scroll fade-left delay-200">
+                    <div className="mockup-card">
+                      <div className="mockup-header">
+                        <span className="mockup-dot"></span>
+                        <span className="mockup-dot"></span>
+                        <span className="mockup-dot"></span>
+                      </div>
+                      <div className="mockup-body">
+                        <div className="mockup-item">
+                          <span className="mockup-icon" style={{ color: 'var(--amber)' }}><ZapIcon /></span>
+                          <div className="mockup-text">
+                            <h4>Fuel Price Adjustment</h4>
+                            <p>Rs. 2,450 charged this month due to nationwide fuel costs.</p>
+                          </div>
+                        </div>
+                        <div className="mockup-item warning">
+                          <span className="mockup-icon" style={{ color: 'var(--red)' }}><AlertIcon /></span>
+                          <div className="mockup-text">
+                            <h4>Slab Change Detected</h4>
+                            <p>You crossed 300 units. Your per-unit cost increased by 40%.</p>
+                          </div>
                         </div>
                       </div>
-                      <div className="mockup-item warning">
-                        <span className="mockup-icon" style={{color: 'var(--red)'}}><AlertIcon /></span>
-                        <div className="mockup-text">
-                          <h4>Slab Change Detected</h4>
-                          <p>You crossed 300 units. Your per-unit cost increased by 40%.</p>
-                        </div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Feature 2 */}
+                <section id="compare" className="feature-showcase reverse">
+                  <div className="feature-showcase-text animate-on-scroll fade-up">
+                    <div className="feature-badge" style={{ color: 'var(--amber)', background: 'var(--amber-light)' }}>Smart Comparison</div>
+                    <h2>Find out why your bill spiked</h2>
+                    <p>Stop guessing why your bill jumped this month. Upload your current and previous bills to instantly see which exact charges, taxes, or unit rates caused the increase.</p>
+                    <button className="btn-secondary" style={{ marginTop: '1rem', background: 'var(--bg-card)', border: '1px solid var(--border)', padding: '10px 20px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }} onClick={() => { setCompareMode(true); window.scrollTo({ top: 0, behavior: 'smooth' }); fileInput2Ref.current?.click(); }}>Compare your bills</button>
+                  </div>
+                  <div className="feature-showcase-visual animate-on-scroll fade-right delay-200">
+                    <div className="mockup-diff-table">
+                      <div className="diff-row header"><span>Charge</span><span>Change</span></div>
+                      <div className="diff-row"><span>Energy Cost</span><span className="text-red">+ Rs. 1,200</span></div>
+                      <div className="diff-row"><span>Fuel Adj.</span><span className="text-green">- Rs. 400</span></div>
+                      <div className="diff-row"><span>Gov Taxes</span><span className="text-red">+ Rs. 350</span></div>
+                      <div className="diff-row total"><span>Total Difference</span><span className="text-red">+ Rs. 1,150</span></div>
+                    </div>
+                  </div>
+                </section>
+
+                {/* Feature 3 */}
+                <section className="feature-showcase">
+                  <div className="feature-showcase-text animate-on-scroll fade-up">
+                    <div className="feature-badge" style={{ color: 'var(--green)', background: 'var(--green-light)' }}>Knowledge Base</div>
+                    <h2>Official rules, simplified</h2>
+                    <p>Don't fall for billing mistakes. Access NEPRA guidelines, solar net-metering regulations, and tax exemptions through an AI-powered search that answers your specific questions instantly.</p>
+                    <button className="btn-secondary" style={{ marginTop: '1rem', background: 'var(--bg-card)', color: 'var(--text-main)', border: '1px solid var(--border)', padding: '10px 20px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', boxShadow: 'var(--shadow-sm)' }} onClick={() => setScreen('official-docs')}>Search the Docs</button>
+                  </div>
+                  <div className="feature-showcase-visual animate-on-scroll fade-left delay-200">
+                    <div className="mockup-search">
+                      <div className="mockup-search-bar">What is the tax rate for non-filers?</div>
+                      <div className="mockup-search-result">
+                        <strong>Section 235A:</strong> Non-filers are subject to a 7.5% advance tax on electricity bills exceeding Rs. 25,000...
                       </div>
                     </div>
                   </div>
-                </div>
-              </section>
-
-              {/* Feature 2 */}
-              <section id="compare" className="feature-showcase reverse">
-                <div className="feature-showcase-text animate-on-scroll fade-up">
-                  <div className="feature-badge" style={{color: 'var(--amber)', background: 'var(--amber-light)'}}>Smart Comparison</div>
-                  <h2>Find out why your bill spiked</h2>
-                  <p>Stop guessing why your bill jumped this month. Upload your current and previous bills to instantly see which exact charges, taxes, or unit rates caused the increase.</p>
-                  <button className="btn-secondary" style={{marginTop: '1rem', background: 'var(--bg-card)', border: '1px solid var(--border)', padding: '10px 20px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', boxShadow: 'var(--shadow-sm)'}} onClick={() => { setCompareMode(true); window.scrollTo({ top: 0, behavior: 'smooth' }); fileInput2Ref.current?.click(); }}>Compare your bills</button>
-                </div>
-                <div className="feature-showcase-visual animate-on-scroll fade-right delay-200">
-                  <div className="mockup-diff-table">
-                    <div className="diff-row header"><span>Charge</span><span>Change</span></div>
-                    <div className="diff-row"><span>Energy Cost</span><span className="text-red">+ Rs. 1,200</span></div>
-                    <div className="diff-row"><span>Fuel Adj.</span><span className="text-green">- Rs. 400</span></div>
-                    <div className="diff-row"><span>Gov Taxes</span><span className="text-red">+ Rs. 350</span></div>
-                    <div className="diff-row total"><span>Total Difference</span><span className="text-red">+ Rs. 1,150</span></div>
-                  </div>
-                </div>
-              </section>
-
-              {/* Feature 3 */}
-              <section className="feature-showcase">
-                <div className="feature-showcase-text animate-on-scroll fade-up">
-                  <div className="feature-badge" style={{color: 'var(--green)', background: 'var(--green-light)'}}>Knowledge Base</div>
-                  <h2>Official rules, simplified</h2>
-                  <p>Don't fall for billing mistakes. Access NEPRA guidelines, solar net-metering regulations, and tax exemptions through an AI-powered search that answers your specific questions instantly.</p>
-                  <button className="btn-secondary" style={{marginTop: '1rem', background: 'var(--bg-card)', color: 'var(--text-main)', border: '1px solid var(--border)', padding: '10px 20px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', boxShadow: 'var(--shadow-sm)'}} onClick={() => setScreen('official-docs')}>Search the Docs</button>
-                </div>
-                <div className="feature-showcase-visual animate-on-scroll fade-left delay-200">
-                  <div className="mockup-search">
-                    <div className="mockup-search-bar">What is the tax rate for non-filers?</div>
-                    <div className="mockup-search-result">
-                      <strong>Section 235A:</strong> Non-filers are subject to a 7.5% advance tax on electricity bills exceeding Rs. 25,000...
-                    </div>
-                  </div>
-                </div>
-              </section>
-            </div>
+                </section>
+              </div>
             </>
           ) : (
             <div className="file-ready-sequence">
@@ -1233,7 +1363,7 @@ export default function App() {
                         <span className="file-preview-name">{file.name}</span>
                         <span className="file-preview-size">{(file.size / 1024).toFixed(0)} KB</span>
                       </div>
-                      <button className="file-remove" onClick={(e) => { e.stopPropagation(); setFile(null); setPreview(null); if(!file2) setCompareMode(false); }}><XIcon /></button>
+                      <button className="file-remove" onClick={(e) => { e.stopPropagation(); setFile(null); setPreview(null); if (!file2) setCompareMode(false); }}><XIcon /></button>
                     </div>
 
                     {/* Bill 2 - upload slot or uploaded */}
@@ -1330,6 +1460,19 @@ export default function App() {
               </div>
             )}
 
+            {/* Critical Alerts */}
+            {billData.isNetMetering && billData.netMetering?.expMdi > billData.netMetering?.dgCapacity && (
+              <div className="critical-alert">
+                <div className="critical-alert-icon">⚠️</div>
+                <div className="critical-alert-content">
+                  <h4 className="critical-alert-title">Export Limit Exceeded</h4>
+                  <p className="critical-alert-text">
+                    Your peak export was <strong>{billData.netMetering.expMdi} kW</strong> but your approved limit is <strong>{billData.netMetering.dgCapacity} kW</strong>. Lower your inverter export setting to avoid potential penalties.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* KPI Strip */}
             <div className="dash-kpi-strip">
               <div className="dash-kpi-card">
@@ -1351,6 +1494,13 @@ export default function App() {
               <div className="dash-kpi-card">
                 <span className="dash-kpi-label">Due Date</span>
                 <span className={`dash-kpi-value ${billData.isPastDue ? 'danger' : ''}`}>{billData.dueDate || 'N/A'}{billData.isPastDue ? ' ⚠️' : ''}</span>
+              </div>
+              <div className="dash-kpi-card">
+                <span className="dash-kpi-label">AI Confidence</span>
+                <span className={`dash-kpi-value ${billData.confidenceScore >= 90 ? 'success' : billData.confidenceScore >= 70 ? 'warning' : 'danger'}`}>
+                  {billData.confidenceScore || 0}%
+                  <span className="confidence-dot"></span>
+                </span>
               </div>
             </div>
 
@@ -1430,7 +1580,7 @@ export default function App() {
             <button className="floating-chat-btn" onClick={() => setIsChatOpen(!isChatOpen)} aria-label="Toggle AI Chat">
               {isChatOpen ? <XIcon /> : <span style={{ fontSize: '1.4rem' }}>💬</span>}
             </button>
-            
+
             {isChatOpen && (
               <div className="floating-chat-panel">
                 <ChatSection billData={billData} />
@@ -1448,7 +1598,55 @@ export default function App() {
       )}
 
       {/* OFFICIAL DOCS */}
-      {screen === 'official-docs' && <KnowledgeBase />}
+      {screen === 'official-docs' && <KnowledgeBase isDemo={isDemo} />}
+
+      <footer className="footer">
+        <div className="container">
+          <div className="footer-inner">
+            <div className="footer-grid">
+              <div className="footer-col">
+                <h4>Product</h4>
+                <ul>
+                  <li><a href="#" onClick={(e) => { e.preventDefault(); setScreen('landing'); }}>Home</a></li>
+                  <li><a href="#" onClick={(e) => { e.preventDefault(); setScreen('comparison'); }}>Compare Bills</a></li>
+                  <li><a href="#" onClick={(e) => { e.preventDefault(); setScreen('official-docs'); }}>Knowledge Base</a></li>
+                </ul>
+              </div>
+              <div className="footer-col">
+                <h4>Support</h4>
+                <ul>
+                  <li><a href="#">Help Center</a></li>
+                  <li><a href="#">API Docs</a></li>
+                  <li><a href="#">Terms of Service</a></li>
+                </ul>
+              </div>
+              <div className="footer-col">
+                <h4>Social</h4>
+                <ul>
+                  <li><a href="#">Twitter</a></li>
+                  <li><a href="#">GitHub</a></li>
+                  <li><a href="#">LinkedIn</a></li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="footer-bottom">
+              <div className="footer-logo" style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'center' }}>
+                <img src="/logo.webp" alt="Bill-y Logo" style={{ width: '48px', height: '48px', objectFit: 'contain' }} />
+                <span style={{ fontSize: '1.5rem', fontWeight: '800', color: 'var(--text-main)' }}>Bill-y</span>
+              </div>
+              <div className="footer-credit">
+                <span>A project for</span>
+                <span className="badge-ai-sekho">AI Sekho 2026</span>
+                <span>By Google</span>
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: 'var(--space-md)' }}>
+                © 2026 Bill-y. All rights reserved.
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
