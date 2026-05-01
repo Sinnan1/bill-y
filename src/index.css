@@ -3241,10 +3241,14 @@ h6 {
 
 .usage-gauge-center {
   position: absolute;
-  bottom: 12px;
+  bottom: 14px;
   left: 50%;
   transform: translateX(-50%);
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
 }
 
 .usage-gauge-pct {
@@ -3261,6 +3265,49 @@ h6 {
   font-family: var(--font-mono);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+
+.gauge-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-md);
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--border);
+}
+
+.gauge-meta-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.gauge-meta-item.wide {
+  grid-column: span 1;
+}
+
+.gauge-meta-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  line-height: 1.2;
+}
+
+.gauge-meta-label {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.savings-meta {
+  grid-template-columns: 1.5fr 1fr;
+}
+
+.savings-meter-content {
+  margin-top: var(--space-md);
 }
 
 .usage-gauge-meta {

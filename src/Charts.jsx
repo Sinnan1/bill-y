@@ -556,16 +556,17 @@ export function BillingTimeline({ data }) {
 export function SavingsMeter({ estimatedSavings, recommendations }) {
   if (!estimatedSavings || estimatedSavings <= 0) return null;
 
-  const maxGauge = Math.max(estimatedSavings * 1.3, 1000);
+  const maxGauge = Math.max(estimatedSavings * 1.2, 500);
   const pct = Math.min((estimatedSavings / maxGauge) * 100, 100);
 
-  // Segments
+  // Dynamic segments based on value
+  const step = Math.ceil(maxGauge / 4 / 500) * 500;
   const segments = [
     { label: '0', max: 0 },
-    { label: '300', max: 300 },
-    { label: '600', max: 600 },
-    { label: '1000', max: 1000 },
-    { label: `${Math.round(maxGauge)}+`, max: maxGauge }
+    { label: step.toLocaleString(), max: step },
+    { label: (step * 2).toLocaleString(), max: step * 2 },
+    { label: (step * 3).toLocaleString(), max: step * 3 },
+    { label: `${(step * 4).toLocaleString()}+`, max: step * 4 }
   ];
 
   const fillColor = pct > 75 ? COLORS.green : pct > 40 ? COLORS.blue : COLORS.amber;
@@ -579,25 +580,38 @@ export function SavingsMeter({ estimatedSavings, recommendations }) {
           <p className="gauge-subtitle">Based on {recommendations?.length || 0} recommendations</p>
         </div>
       </div>
-      <div className="savings-meter">
-        <div className="savings-meter-track">
-          {segments.slice(0, -1).map((seg, i) => {
-            const segPct = ((segments[i + 1].max - seg.max) / maxGauge) * 100;
-            const segFill = Math.max(0, Math.min(segPct, pct - (seg.max / maxGauge) * 100));
-            return (
-              <div key={i} className="savings-segment" style={{ width: `${segPct}%` }}>
-                <div className="savings-segment-fill" style={{ width: `${(segFill / segPct) * 100}%`, background: fillColor }} />
-              </div>
-            );
-          })}
+      <div className="savings-meter-content">
+        <div className="savings-meter">
+          <div className="savings-meter-track">
+            {segments.slice(0, -1).map((seg, i) => {
+              const segPct = ((segments[i + 1].max - seg.max) / maxGauge) * 100;
+              const segFill = Math.max(0, Math.min(segPct, pct - (seg.max / maxGauge) * 100));
+              return (
+                <div key={i} className="savings-segment" style={{ width: `${segPct}%` }}>
+                  <div className="savings-segment-fill" style={{ width: `${(segFill / segPct) * 100}%`, background: fillColor }} />
+                </div>
+              );
+            })}
+          </div>
+          <div className="savings-meter-labels">
+            {segments.map((s, i) => (
+              <span key={i} className="savings-meter-label">{s.label}</span>
+            ))}
+          </div>
         </div>
-        <div className="savings-meter-labels">
-          {segments.map((s, i) => (
-            <span key={i} className="savings-meter-label">{s.label}</span>
-          ))}
+      </div>
+      <div className="gauge-meta savings-meta">
+        <div className="gauge-meta-item wide">
+          <span className="gauge-meta-value" style={{ color: fillColor }}>
+            Rs. {estimatedSavings.toLocaleString()}/mo
+          </span>
+          <span className="gauge-meta-label">Monthly Potential Savings</span>
         </div>
-        <div className="savings-meter-value" style={{ color: fillColor }}>
-          You could save up to <strong>Rs. {estimatedSavings.toLocaleString()}/month</strong>
+        <div className="gauge-meta-item">
+          <span className="gauge-meta-value">
+            Rs. {(estimatedSavings * 12).toLocaleString()}
+          </span>
+          <span className="gauge-meta-label">Est. Annual</span>
         </div>
       </div>
     </div>
@@ -610,13 +624,14 @@ export function UsageGauge({ unitsConsumed, unitLabel, billType }) {
 
   // Safe benchmarks for Pakistani households
   const benchmarks = {
-    'LESCO Electricity Bill': { avg: 300, label: 'Avg Pakistani home' },
+    'LESCO Electricity Bill': { avg: 210, label: 'Avg Pakistani home' },
+    'LESCO Net Metering Bill': { avg: 210, label: 'Avg Pakistani home' },
     'SNGPL Gas Bill': { avg: 100, label: 'Avg Pakistani home' },
     'KWSB Water Bill': { avg: 5000, label: 'Avg Pakistani home' },
     'WASA Water Bill': { avg: 5000, label: 'Avg Pakistani home' }
   };
 
-  const benchmark = benchmarks[billType] || { avg: unitsConsumed, label: 'Benchmark' };
+  const benchmark = benchmarks[billType] || { avg: 210, label: 'Avg Pakistani home' };
   const pct = Math.min((unitsConsumed / benchmark.avg) * 100, 150);
 
   const data = [
@@ -663,14 +678,14 @@ export function UsageGauge({ unitsConsumed, unitLabel, billType }) {
           <span className="usage-gauge-label">of benchmark</span>
         </div>
       </div>
-      <div className="usage-gauge-meta">
-        <div className="usage-meta-item">
-          <span className="usage-meta-value">{unitsConsumed.toLocaleString()}</span>
-          <span className="usage-meta-label">Your usage ({unitLabel})</span>
+      <div className="gauge-meta usage-meta">
+        <div className="gauge-meta-item">
+          <span className="gauge-meta-value">{unitsConsumed.toLocaleString()}</span>
+          <span className="gauge-meta-label">Your usage ({unitLabel})</span>
         </div>
-        <div className="usage-meta-item">
-          <span className="usage-meta-value">{benchmark.avg.toLocaleString()}</span>
-          <span className="usage-meta-label">{benchmark.label} ({unitLabel})</span>
+        <div className="gauge-meta-item">
+          <span className="gauge-meta-value">{benchmark.avg.toLocaleString()}</span>
+          <span className="gauge-meta-label">{benchmark.label} ({unitLabel})</span>
         </div>
       </div>
     </div>

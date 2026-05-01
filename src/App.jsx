@@ -976,6 +976,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('overview');
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isDemo, setIsDemo] = useState(false);
+  const [generatingPDF, setGeneratingPDF] = useState(false);
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const fileInputRef = useRef(null);
@@ -1755,8 +1756,12 @@ export default function App() {
 
             {/* Footer Actions */}
             <div className="footer-actions">
-              <button className="btn-primary" onClick={() => generatePDF(billData)}>
-                <DownloadIcon /> Download Summary
+              <button className="btn-primary" disabled={generatingPDF} onClick={async () => {
+                setGeneratingPDF(true);
+                try { await generatePDF(billData); } catch (e) { console.error(e); }
+                setGeneratingPDF(false);
+              }}>
+                <DownloadIcon /> {generatingPDF ? 'Generating...' : 'Download Report'}
               </button>
               <button className="btn-secondary" onClick={reset}>
                 <RefreshIcon /> Analyze Another Bill
