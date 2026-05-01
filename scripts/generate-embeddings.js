@@ -88,7 +88,8 @@ async function getEmbedding(text, retryCount = 0) {
   try {
     const result = await ai.models.embedContent({
       model: MODEL,
-      contents: [text]
+      contents: [text],
+      config: { output_dimensionality: 768 }
     });
     return result.embeddings[0].values;
   } catch (err) {
@@ -151,12 +152,15 @@ async function main() {
   console.log(`🚀 Generating embeddings with ${MODEL}...\n`);
 
   const results = [];
+  const docTitle = docName || docId;
+
   for (let i = 0; i < chunks.length; i++) {
     const chunk = chunks[i];
+    const prefixedChunk = `title: ${docTitle} | text: ${chunk}`;
     process.stdout.write(`  [${i + 1}/${chunks.length}] ${chunk.slice(0, 50).replace(/\n/g, ' ')}... `);
 
     try {
-      const embedding = await getEmbedding(chunk);
+      const embedding = await getEmbedding(prefixedChunk);
       results.push({ chunk, embedding, category });
       console.log('✅');
     } catch (err) {

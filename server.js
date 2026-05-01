@@ -557,9 +557,11 @@ app.post('/api/kb/search', async (req, res) => {
     if (!question) return res.status(400).json({ error: 'Question required' });
     if (!kbChunks.length) return res.status(503).json({ error: 'Knowledge base not loaded' });
 
+    const queryText = `task: question answering | query: ${question}`;
     const embedResult = await ai.models.embedContent({
       model: 'gemini-embedding-2',
-      contents: [question]
+      contents: [queryText],
+      config: { output_dimensionality: 768 }
     });
     const questionEmbedding = embedResult.embeddings[0].values;
 
@@ -568,7 +570,33 @@ app.post('/api/kb/search', async (req, res) => {
       score: cosineSimilarity(questionEmbedding, c.embedding)
     }));
     scored.sort((a, b) => b.score - a.score);
-    const topChunks = scored.slice(0, 5);
+
+    // Retrieve top 15 for HyDE reranking, casting a wider net
+    const candidates = scored.slice(0, 15);
+
+    // HyDE: generate a hypothetical answer, then embed it for better matching
+    const hypoResult = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [{ role: 'user', parts: [{
+        text: `You are an expert on Pakistani utility regulations. Write a concise, factual answer to this question based on what you know. Keep it under 100 words. Question: ${question}`
+      }] }]
+    });
+    const hypotheticalAnswer = hypoResult.text;
+
+    const hypoEmbed = await ai.models.embedContent({
+      model: 'gemini-embedding-2',
+      contents: [`task: question answering | query: ${hypotheticalAnswer}`],
+      config: { output_dimensionality: 768 }
+    });
+    const hypoEmbedding = hypoEmbed.embeddings[0].values;
+
+    // Re-score candidates against hypothetical answer embedding
+    const reranked = candidates.map(c => ({
+      ...c,
+      score: cosineSimilarity(hypoEmbedding, c.embedding),
+    }));
+    reranked.sort((a, b) => b.score - a.score);
+    const topChunks = reranked.slice(0, 5);
 
     // Sort: authoritative first, then by score
     topChunks.sort((a, b) => {
