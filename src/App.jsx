@@ -11,7 +11,7 @@ import {
   BillingCalendar
 } from './Charts';
 import KnowledgeBase from './KnowledgeBase';
-import { DEMO_BILL_A, DEMO_BILL_B, DEMO_COMPARE_DATA } from './demoData';
+import { DEMO_BILL_A, DEMO_BILL_B, DEMO_COMPARE_DATA, DEMO_CHAT_QA } from './demoData';
 
 /* ═══════ SVG Icons ═══════ */
 const UploadIcon = () => (
@@ -457,13 +457,37 @@ function OverchargeAlert({ data }) {
 }
 
 /* ═══════ Chat Section ═══════ */
-function ChatSection({ billData }) {
+function ChatSection({ billData, isDemo }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const endRef = useRef(null);
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+
+  const findDemoAnswer = (question) => {
+    const q = question.toLowerCase();
+    const match = DEMO_CHAT_QA.find(entry =>
+      entry.keywords.some(kw => q.includes(kw))
+    );
+    return match ? match.answer : "I've analyzed your bill and here's a summary: Your April 2026 bill is Rs. 4,214, which is 58% less than last month. Your solar exports (1,648 kWh) fully covered your electricity cost. The remaining charges are Fixed Charges (Rs. 3,571) and GST (Rs. 643). Feel free to ask me something more specific!";
+  };
+
+  const renderMarkdown = (text) => {
+    let html = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/^### (.+)$/gm, '<h4>$1</h4>')
+      .replace(/^## (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^# (.+)$/gm, '<h2>$1</h2>')
+      .replace(/\n\n/g, '</p><p>')
+      .replace(/\n/g, '<br>');
+    html = '<p>' + html + '</p>';
+    html = html.replace(/<p><br><\/p>/g, '');
+    return html;
+  };
 
   const send = async (text) => {
     const q = text || input.trim();
@@ -472,7 +496,13 @@ function ChatSection({ billData }) {
     setMessages(prev => [...prev, { role: 'user', text: q }]);
     setLoading(true);
     try {
-      const answer = await askQuestion(q, billData);
+      let answer;
+      if (isDemo) {
+        await new Promise(r => setTimeout(r, 1200 + Math.random() * 800));
+        answer = findDemoAnswer(q);
+      } else {
+        answer = await askQuestion(q, billData);
+      }
       setMessages(prev => [...prev, { role: 'assistant', text: answer }]);
     } catch (err) {
       console.error(err);
@@ -506,7 +536,7 @@ function ChatSection({ billData }) {
         )}
         {messages.length > 0 && (
           <div className="chat-messages">
-            {messages.map((m, i) => <div key={i} className={`chat-msg ${m.role}`}>{m.text}</div>)}
+            {messages.map((m, i) => <div key={i} className={`chat-msg ${m.role}`} dangerouslySetInnerHTML={{ __html: renderMarkdown(m.text) }} />)}
             {loading && <div className="chat-msg assistant" style={{ opacity: 0.6 }}>Thinking...</div>}
             <div ref={endRef} />
           </div>
@@ -1740,7 +1770,7 @@ export default function App() {
 
             {isChatOpen && (
               <div className="floating-chat-panel">
-                <ChatSection billData={billData} />
+                <ChatSection billData={billData} isDemo={isDemo} />
               </div>
             )}
           </div>
